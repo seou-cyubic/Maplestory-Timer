@@ -1,0 +1,353 @@
+[
+  {
+    "id": "B01",
+    "name": "영웅의 메아리",
+    "image": "assets/candidates/B01.png",
+    "approved": true,
+    "time_mode": "minutes",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B02",
+    "name": "루나 익스텐션",
+    "image": "assets/candidates/B02.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B03",
+    "name": "루나 게더링",
+    "image": "assets/candidates/B03.png",
+    "approved": true,
+    "time_mode": "stack",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B04",
+    "name": "째깍째깍 동화 시간 Lv.3",
+    "image": "assets/candidates/B04.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B05",
+    "name": "째깍째깍 동화 시간 Lv.2",
+    "image": "assets/candidates/B05.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B06",
+    "name": "째깍째깍 동화 시간 Lv.1",
+    "image": "assets/candidates/B06.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B07",
+    "name": "훈련 일지",
+    "image": "assets/candidates/B07.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B08",
+    "name": "버닝 BEYOND",
+    "image": "assets/candidates/B08.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B09",
+    "name": "아티팩트의 힘",
+    "image": "assets/candidates/B09.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "T01",
+    "name": "사용자 확인 단기 버프",
+    "image": "assets/candidates/T01.png",
+    "approved": true,
+    "time_mode": "clock"
+  },
+  {
+    "id": "T02",
+    "name": "사용자 확인 분 단위 버프",
+    "image": "assets/candidates/T02.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P01",
+    "name": "사용자 제공 버프 1",
+    "image": "assets/candidates/P01.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P02",
+    "name": "사용자 제공 버프 2",
+    "image": "assets/candidates/P02.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P03",
+    "name": "사용자 제공 버프 3",
+    "image": "assets/candidates/P03.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P04",
+    "name": "소형 재물 획득의 비약",
+    "image": "assets/candidates/P04.png",
+    "approved": true,
+    "time_mode": "wealth",
+    "role": "wealth_potion",
+    "max_seconds": 1859,
+    "duration_source": "사용자 확인 지속시간 1800초. 분 표시는 분:59를 뜻하므로 (2026-09-06) 표시 가능한 최댓값은 \"30\" -> 30*60+59 = 1859초다. 200분/250분 같은 오판독은 12059초로 여전히 걸러진다.",
+    "variant_images": [
+      "assets/candidates/P04c.png"
+    ],
+    "variant_source": "2026-09-06 실측: 비약이 분 표시(\"16\"/\"29\")에서 시계 표시(\"4:24\")로 바뀌면 숫자 뒤 검은 띠가 상단 patch(2~9행)까지 침범해 정합이 0.997 -> 0.852로 떨어져 아예 미검출됐다. 표시 모드별 템플릿을 등록해 해결한다.",
+    "match_min": 0.8,
+    "rival": "P05",
+    "discriminator_rect": [
+      16,
+      23,
+      8,
+      4
+    ],
+    "discriminator_source": "2026-09-06 실측: 금색 화소 signature는 시계 표시에서 노란 숫자에 오염되어 재물 35 / 경험 33 으로 구분 불가였다(위치·색 조건 4,685개 전수 탐색에서 절대 기준 분리 영역 없음, 상대 비교도 최소 마진 3픽셀). 대신 주머니 하단 rect [16,23,8,4]에서 두 비약 템플릿과 상관을 비교하면 자기참조 템플릿을 제외하고도 4개 실셀 전부 정확 분류되며 마진이 0.99 vs 0.83으로 크다."
+  },
+  {
+    "id": "P05",
+    "name": "소형 경험 축적의 비약",
+    "image": "assets/candidates/P05.png",
+    "approved": true,
+    "time_mode": "minutes",
+    "name_source": "2026-09-06 아이콘 대조 — P04와 동일 계열 물약. P04에는 금색(재물) 물방울과 금색 주머니가 있고 P05에는 없다. 실화면 live_booster.png에서 두 아이콘이 나란히 활성 상태로 관측됨. 사용자 보고: 재물 대신 경험 비약에 후킹되는 문제.",
+    "variant_images": [
+      "assets/candidates/P05c.png"
+    ],
+    "variant_source": "2026-09-06 실측: 비약이 분 표시(\"16\"/\"29\")에서 시계 표시(\"4:24\")로 바뀌면 숫자 뒤 검은 띠가 상단 patch(2~9행)까지 침범해 정합이 0.997 -> 0.852로 떨어져 아예 미검출됐다. 표시 모드별 템플릿을 등록해 해결한다.",
+    "match_min": 0.8,
+    "rival": "P04",
+    "discriminator_rect": [
+      16,
+      23,
+      8,
+      4
+    ],
+    "discriminator_source": "2026-09-06 실측: 금색 화소 signature는 시계 표시에서 노란 숫자에 오염되어 재물 35 / 경험 33 으로 구분 불가였다(위치·색 조건 4,685개 전수 탐색에서 절대 기준 분리 영역 없음, 상대 비교도 최소 마진 3픽셀). 대신 주머니 하단 rect [16,23,8,4]에서 두 비약 템플릿과 상관을 비교하면 자기참조 템플릿을 제외하고도 4개 실셀 전부 정확 분류되며 마진이 0.99 vs 0.83으로 크다."
+  },
+  {
+    "id": "P06",
+    "name": "사용자 제공 버프 6",
+    "image": "assets/candidates/P06.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P07",
+    "name": "사용자 제공 버프 7",
+    "image": "assets/candidates/P07.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P08",
+    "name": "사용자 제공 버프 8",
+    "image": "assets/candidates/P08.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "U00",
+    "name": "추가 버프 U00 (이름 미확인)",
+    "image": "assets/candidates/U00.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U01",
+    "name": "추가 버프 U01 (이름 미확인)",
+    "image": "assets/candidates/U01.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U02",
+    "name": "추가 버프 U02 (이름 미확인)",
+    "image": "assets/candidates/U02.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U03",
+    "name": "추가 버프 U03 (이름 미확인)",
+    "image": "assets/candidates/U03.png",
+    "approved": false,
+    "time_mode": "unknown",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U04",
+    "name": "추가 버프 U04 (이름 미확인)",
+    "image": "assets/candidates/U04.png",
+    "approved": false,
+    "time_mode": "unknown",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U05",
+    "name": "추가 버프 U05 (이름 미확인)",
+    "image": "assets/candidates/U05.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U06",
+    "name": "추가 버프 U06 (이름 미확인)",
+    "image": "assets/candidates/U06.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U07",
+    "name": "추가 버프 U07 (이름 미확인)",
+    "image": "assets/candidates/U07.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U08",
+    "name": "추가 버프 U08 (이름 미확인)",
+    "image": "assets/candidates/U08.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U10",
+    "name": "추가 버프 U10 (이름 미확인)",
+    "image": "assets/candidates/U10.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U11",
+    "name": "추가 버프 U11 (이름 미확인)",
+    "image": "assets/candidates/U11.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U12",
+    "name": "룬 지속시간 (1분 미만 표시)",
+    "image": "assets/candidates/U12.png",
+    "approved": false,
+    "time_mode": "seconds",
+    "name_source": "2026-09-06 측정: U13과 아이콘 아트 동일(상단 patch 정합 0.9994). 차이는 전부 숫자 띄(y=10~28)에만 있음 — 같은 버프의 1분 미만 표시. 중복 매칭을 막기 위해 별칭으로 남김.",
+    "alias_of": "U13"
+  },
+  {
+    "id": "U13",
+    "name": "룬 지속시간",
+    "image": "assets/candidates/U13.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "2026-09-06 사용자 확인: \"U13 이 룬 아이콘이며, 해당 사진의 지속 시간은 4:07 이다.\" 아이콘 자체는 assets/candidates/U13.png (4:07 표시). 이름은 기능명이며 인게임 툴팁 원문은 미확인.",
+    "role": "rune_duration",
+    "identified": true,
+    "seconds_below_minute": true,
+    "requires_resolution_seconds": 1,
+    "match_source": "2026-09-06 측정: U13 상단 patch(rows2-9)가 U12와 0.9994(동일 아이콘), 나머지 버프와는 ≤ 0.32 — 별도 signature 불필요",
+    "max_instances": 4,
+    "max_instances_source": "2026-09-06 실화면: 룬이 두 개 떠 있을 때 한 프레임에 하나만 잡혀 채택값이 16~35초와 242~246초 사이를 오갔다. 같은 종류의 아이콘이 여러 개일 수 있으므로 최대 이만큼 찾는다 — \"가장 긴 것 채용\" 규칙이 성립하려면 먼저 전부 찾아야 한다."
+  },
+  {
+    "id": "U14",
+    "name": "추가 버프 U14 (이름 미확인)",
+    "image": "assets/candidates/U14.png",
+    "approved": true,
+    "time_mode": "minutes",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U15",
+    "name": "추가 버프 U15 (이름 미확인)",
+    "image": "assets/candidates/U15.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U16",
+    "name": "추가 버프 U16 (이름 미확인)",
+    "image": "assets/candidates/U16.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U17",
+    "name": "추가 버프 U17 (이름 미확인)",
+    "image": "assets/candidates/U17.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U18",
+    "name": "추가 버프 U18 (이름 미확인)",
+    "image": "assets/candidates/U18.png",
+    "approved": false,
+    "time_mode": "unknown",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U19",
+    "role": "rune_duration",
+    "name": "룬 지속시간 (짙은 파랑)",
+    "image": "assets/candidates/U19.png",
+    "approved": true,
+    "identified": true,
+    "time_mode": "clock",
+    "seconds_below_minute": true,
+    "requires_resolution_seconds": 1,
+    "name_source": "2026-09-06 사용자 확인: \"기존 룬 아이콘과 유사한, 하지만 조금 더 짙은 파란색의 아이콘이 있을 것이다. 그 아이콘도 룬 아이콘이다.\" Maple_260906_023211.png 의 (1075,40) 32x32 셀에서 추출, 화면 표시 2:12.",
+    "match_source": "2026-09-06 측정: U19 상단 patch(rows2-9) 자기 셀 1.0000 / 같은 화면 차순위 0.638. U13 셀(live_booster x=1043)에서는 0.8953, U13 patch는 U19에서 0.8948 — 둘 다 매칭 하한 0.90 미만이라 서로 오매칭하지 않는다. 설령 교차 매칭되어도 같은 셀의 같은 숫자를 두 번 읽는 것이라 최댓값 규칙에 영향 없음.",
+    "max_instances": 4,
+    "max_instances_source": "2026-09-06 실화면: 룬이 두 개 떠 있을 때 한 프레임에 하나만 잡혀 채택값이 16~35초와 242~246초 사이를 오갔다. 같은 종류의 아이콘이 여러 개일 수 있으므로 최대 이만큼 찾는다 — \"가장 긴 것 채용\" 규칙이 성립하려면 먼저 전부 찾아야 한다."
+  },
+  {
+    "id": "U20",
+    "name": "룬 쿨타임",
+    "role": "rune_cooldown",
+    "image": "assets/candidates/U20.png",
+    "time_mode": "minutes",
+    "identified": true,
+    "approved": true,
+    "match_min": 0.8,
+    "max_seconds": 3599,
+    "_note": "사용자가 캡처로 지목한 룬 쿨타임 아이콘 (2026-09-07). 템플릿은 녹화 rec_20260907080700 의 f896~903 을 평균낸 것이다 - 공유 스트림이 손실 압축이라 한 장만 쓰면 코덱 잡음이 그대로 들어간다. 숫자는 좌측 하단 흰 분 표기라 time_mode 는 minutes 다. 2026-09-07 재작성: 처음 만든 템플릿이 참 칸보다 1px 오른쪽에서 잘려 있었다. 녹화에서 P04 와 U20 이 함께 보인 340프레임 전부에서 (x_U20 - x_P04) mod 32 == 1 이었고, 그 탓에 룬 칸 크롭에 옆 아이콘이 물려 들어왔다(사용자 보고 \"지저분하다\"). P04 를 격자 기준 위상으로 삼아 1px 왼쪽에서 다시 잘랐고, 581프레임 재검증에서 위상 어긋남 0/568 · 발견 98.5% · 평균정합 0.9679 로 예전(0.9691)과 같다. match_min 0.80 은 유지한다 - 진짜 자리의 최저 점수가 0.804 이고, 0.85 로 올리면 562건 중 39건을 잃는다. 진짜가 아닌 곳에 붙은 적은 없다: 0.99 대로 잡힌 다른 자리들((947,41) (1011,41) (1139,41) (1171,41) (1171,78))은 모두 1043 기준 32px 격자 위이고, 버프 줄이 밀리면서 아이콘이 실제로 옮겨 앉은 칸이다."
+  }
+]

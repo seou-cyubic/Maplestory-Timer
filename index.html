@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Astra Web — 메이플스토리 화면 관측</title>
+<style>
+  :root{
+    --bg:#131c28; --panel:#1a2634; --panel2:#213043; --line:#2f425a;
+    --ink:#e6eef8; --dim:#93a6bd; --ok:#5ad6a0; --warn:#f0c05a; --bad:#f07a7a; --accent:#6aa9f0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:14px/1.5 "Malgun Gothic","Segoe UI",system-ui,sans-serif}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+         padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+  h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px}
+  .spacer{flex:1}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+         border-radius:6px;padding:7px 14px;font:inherit;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:default}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#0d1620;font-weight:600}
+  label.chk{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;padding:16px 20px;align-items:start}
+  main > div{min-width:0}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;
+          min-width:0;overflow:hidden}
+  /* 긴 토큰 하나가 칸을 넓히지 못하게 한다 (고정 크기 규칙의 가로 방향). */
+  .card,.crop,.calib,#health,#fps,#log,.note,.cropmeta{overflow-wrap:anywhere;word-break:break-word}
+  h2{font-size:12px;margin:0 0 10px;color:var(--dim);font-weight:600;letter-spacing:.6px;text-transform:uppercase}
+  /* 고정 크기 규칙 (2026-09-06): 설명 문구가 실시간으로 바뀌어도 레이아웃이
+     움직이지 않도록, 글이 들어가는 모든 칸은 크기를 고정하고 넘치면 감춘다. */
+  .status{padding:8px 12px;border-radius:6px;background:var(--panel2);font-size:13px;
+          width:340px;height:34px;line-height:18px;overflow:hidden;
+          white-space:nowrap;text-overflow:ellipsis;flex:0 0 auto}
+  .status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.bad{color:var(--bad)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;min-width:0}
+  .cards > *{min-width:0}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;
+        height:176px;overflow:hidden;display:flex;flex-direction:column}
+  .card .k{font-size:11px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;
+           height:16px;line-height:16px;overflow:hidden;white-space:nowrap;flex:0 0 auto}
+  .card .v{font-size:24px;font-weight:600;margin:4px 0 2px;font-variant-numeric:tabular-nums;
+           height:34px;line-height:34px;overflow:hidden;white-space:nowrap;
+           text-overflow:ellipsis;flex:0 0 auto}
+  /* 여러 줄이 오더라도 칸 높이는 그대로. 넘치는 부분은 잘라낸다. */
+  .card .m{font-size:11px;line-height:15px;color:var(--dim);white-space:pre-line;
+           overflow:hidden;flex:1 1 auto;min-height:0}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#31445e}
+  .badge.ok{background:#1d4a3a;color:var(--ok)}
+  .badge.warn{background:#4a3f1d;color:var(--warn)}
+  .badge.bad{background:#4a1d1d;color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+  th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600}
+  td.dim,.dim{color:var(--dim)}
+  .tablewrap{height:320px;overflow:auto}
+  canvas#preview{width:100%;height:auto;background:#0c131c;border-radius:6px;
+                 border:1px solid var(--line);cursor:crosshair;display:block}
+  .calib{margin-top:8px;font-size:12px;line-height:16px;color:var(--dim);padding:6px 8px;
+         background:var(--panel2);border-radius:6px;height:56px;overflow:hidden}
+  .calib.ok{color:var(--ok)} .calib.warn{color:var(--warn)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;height:60px;
+         overflow-y:auto;align-content:flex-start}
+  .chip{font-size:11px;padding:4px 9px;border-radius:20px;background:var(--panel2);
+        border:1px solid var(--line);color:var(--dim);cursor:pointer}
+  .chip.on{border-color:var(--ok);color:var(--ok)}
+  #log{height:280px;overflow:auto;font-size:12px;font-family:Consolas,monospace}
+  .logline{padding:2px 0;border-bottom:1px solid #1f2c3d;color:var(--dim)}
+  .logline.ok{color:var(--ok)} .logline.warn{color:var(--warn)}
+  .logline.bad{color:var(--bad)} .logline.alert{color:var(--accent);font-weight:600}
+  #health{font-size:11px;line-height:16px;color:var(--dim);font-family:Consolas,monospace;
+          padding-top:8px;border-top:1px solid var(--line);margin-top:10px;
+          height:40px;overflow:hidden}
+  .note{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.7}
+  #fps{height:32px;overflow:hidden;line-height:16px}
+  #shareInfo{height:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  #buffMeta{display:inline-block;max-width:70%;overflow:hidden;white-space:nowrap;
+            text-overflow:ellipsis;vertical-align:bottom}
+  /* 버프 표: 칸 너비를 고정해 내용에 따라 열이 흔들리지 않게 한다. */
+  #buffTable{table-layout:fixed}
+  #buffTable td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* 영역별 가로 한 칸 배치 (2026-09-07).
+
+     이전에는 위쪽에 판정값 카드가 모여 있고 아래쪽에 캡처 이미지가 따로 모여
+     있어서, 한 검출기를 보려면 눈이 두 곳을 오가야 했다. 이제 검출기 하나가
+     넓은 가로 한 칸을 차지하고 그 안에 판정값과 캡처 이미지가 같이 있다.
+     칸은 세로로 쌓인다.
+
+     높이는 고정한다. 내용에 따라 늘었다 줄었다 하면 UI가 튄다 (사용자 지적). */
+  .lanes{display:grid;gap:12px;min-width:0}
+  .lane{display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px;
+        background:var(--panel2);border:1px solid var(--line);
+        border-left:3px solid var(--dot);border-radius:8px;
+        padding:12px 14px;height:156px;min-width:0}
+  .lane > *{min-width:0;overflow:hidden}
+  .lanehead{display:flex;flex-direction:column;gap:4px}
+  .lanehead .k{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.04em;
+               text-transform:uppercase;color:var(--dim)}
+  .lanehead .v{font-size:26px;font-weight:650;line-height:1.15;
+               font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .lanehead .m{font-size:11px;color:var(--dim);overflow-wrap:anywhere}
+  .lanecanvas{display:flex;align-items:center;justify-content:center;
+              background:#0c131c;border:1px solid var(--line);border-radius:6px;
+              overflow:hidden}
+  /* 캔버스 버퍼가 영역과 1:1 이므로 여기서는 칸에 맞춰 줄이기만 한다.
+     비율이 유지되고 확대해도 화소가 뭉개지지 않는다. */
+  /* 버퍼가 영역과 1:1 이라 그대로 두면 32x32 칸이 32px 로 보인다. 칸 높이를
+     채우되 비율은 그대로 두고, 가로가 넘치면 폭에 맞춘다. 확대해도 화소가
+     뭉개지지 않게 pixelated 로 그린다. */
+  /* 버퍼가 이미 칸에 맞춰 정수배로 확대돼 온다. 여기서는 넘칠 때 줄이기만
+     한다 — 늘리면 비율이 깨진다. */
+  .lanecanvas canvas{max-width:100%;max-height:100%;display:block;
+                     image-rendering:pixelated}
+  .lanemeta{display:flex;flex-direction:column;gap:3px;font-size:10.5px;color:var(--dim)}
+  .lanemeta .src{align-self:flex-start}
+  /* 기술 정보(좌표·정합점수·내부 상태·프레임 번호)는 화면에서 감춘다
+     (2026-09-07 사용자 요청). 위의 정의보다 **뒤에** 두어야 덮인다 —
+     앞에 두었더니 같은 특이도라 원래 정의가 이겼다.
+     DOM 에는 그대로 남겨 main.js 가 계속 쓰고 기록 내보내기에도 들어간다.
+     지우면 그 값들이 기록에서도 사라진다. */
+  /* 사냥터 이름은 기술 정보가 아니라 사용자가 보려는 값이다 (2026-09-07
+     지시). .m 과 달리 숨기지 않는다. */
+  .mapname{font-size:12.5px;color:var(--fg);opacity:.85;margin-top:2px;
+           overflow-wrap:anywhere}
+  .lanemeta{display:none}
+  .lanehead .m{display:none}
+  @media (max-width:900px){
+    .lane{grid-template-columns:1fr;height:auto}
+    .lanecanvas{height:130px}
+  }
+  .crops{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;min-width:0}
+  .crops > *{min-width:0}
+  .crop{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--dot);
+        border-radius:8px;padding:10px}
+  .croptitle{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+             font-size:12px;margin-bottom:7px;height:16px;overflow:hidden}
+  .croptitle b{white-space:nowrap;flex:0 0 auto}
+  .croptitle .src{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .croptitle b{color:var(--dot);font-weight:600}
+  .croptitle .src{font-size:10px;color:var(--dim);text-align:right}
+  .crop{height:262px}
+  .crop .canvaswrap{height:150px;display:flex;align-items:center;justify-content:center;
+                    background:#0c131c;border-radius:5px;border:1px solid var(--line);overflow:hidden}
+  .crop canvas{max-width:100%;max-height:100%;width:auto;height:auto;display:block;
+               image-rendering:pixelated}
+  .cropmeta{display:flex;flex-direction:column;gap:2px;margin-top:7px;font-size:10.5px;
+            line-height:1.45;height:62px;overflow:hidden}
+  .cropmeta > span{overflow:hidden}
+  .mono{font-family:Consolas,monospace;color:#8fa6c0}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  @media (max-width:1100px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Astra Web — 메이플스토리 화면 관측</h1>
+  <div id="status" class="status">준비 중…</div>
+  <div class="spacer"></div>
+  <label class="chk"><input type="checkbox" id="chkBuffs" checked> 전체 버프 목록</label>
+  <label class="chk"><input type="checkbox" id="chkLie" checked> 탐지기 감시</label>
+  <button id="btnSound">소리 테스트</button>
+  <button id="btnExport">기록 내보내기</button>
+  <button id="btnStop" disabled>중지</button>
+  <button id="btnShare" class="primary">화면 공유 시작</button>
+</header>
+
+<main>
+  <div style="display:grid;gap:16px;min-width:0">
+    <section>
+      <h2>검출기별 판정과 캡처 영역</h2>
+      <div class="lanes">
+        <div class="lane" style="--dot:#4fd1e0">
+          <div class="lanehead">
+            <div class="k">경험치 <span id="expState" class="badge">—</span></div>
+            <div class="v" id="expValue">대기</div>
+            <div class="m" id="expRaw">—</div>
+          </div>
+          <div class="lanecanvas"><canvas id="cropExp" width="760" height="60"></canvas></div>
+          <div class="lanemeta">
+            <span id="srcExp" class="src">—</span>
+            <span class="mono" id="rectExp">—</span>
+            <span id="infoExp">—</span>
+          </div>
+        </div>
+        <div class="lane" style="--dot:#f06ad0">
+          <div class="lanehead">
+            <div class="k">룬 </div>
+            <div class="v" id="runeValue">대기</div>
+            <div class="mapname" id="mapName">사냥터: 확인 중</div>
+            <div class="m" id="runeMeta">—</div>
+          </div>
+          <div class="lanecanvas"><canvas id="cropRune" width="392" height="244"></canvas></div>
+          <div class="lanemeta">
+            <span id="srcRune" class="src">—</span>
+            <span class="mono" id="rectRune">—</span>
+            <span id="infoRune">—</span>
+          </div>
+        </div>
+        <div class="lane" style="--dot:#f0c05a">
+          <div class="lanehead">
+            <div class="k">소형 재물 획득의 비약 </div>
+            <div class="v" id="wealthValue">대기</div>
+            <div class="m" id="wealthMeta">—</div>
+          </div>
+          <div class="lanecanvas"><canvas id="cropWealth" width="288" height="288"></canvas></div>
+          <div class="lanemeta">
+            <span id="srcWealth" class="src">—</span>
+            <span class="mono" id="rectWealth">—</span>
+            <span id="infoWealth">—</span>
+          </div>
+        </div>
+        <div class="lane" style="--dot:#5ad6a0">
+          <div class="lanehead">
+            <div class="k">부스터 <span id="boosterState" class="badge">UNSEEN</span></div>
+            <div class="v" id="boosterValue">대기</div>
+            <div class="m" id="boosterMeta">—</div><div class="m" id="runeDurationLine">룬 지속시간: 대기</div>
+          </div>
+          <div class="lanecanvas"><canvas id="cropBooster" width="606" height="171"></canvas></div>
+          <div class="lanemeta">
+            <span id="srcBooster" class="src">—</span>
+            <span class="mono" id="rectBooster">—</span>
+            <span id="infoBooster">—</span>
+          </div>
+        </div>
+        <div class="lane" style="--dot:#f0864a">
+          <div class="lanehead">
+            <div class="k">거짓말 탐지기 </div>
+            <div class="v" id="lieValue">대기</div>
+            <div class="m" id="lieMeta">—</div>
+          </div>
+          <div class="lanecanvas"><canvas id="cropLie" width="520" height="300"></canvas></div>
+          <div class="lanemeta">
+            <span id="srcLie" class="src">—</span>
+            <span class="mono" id="rectLie">—</span>
+            <span id="infoLie">—</span>
+          </div>
+        </div>
+      </div>
+      <div id="health">워커 대기 중…</div>
+      <div class="note">
+        칸마다 왼쪽이 그 검출기의 판정, 가운데가 <b>그 프레임에서 실제로 읽은 영역</b>,
+        오른쪽이 좌표와 상태입니다. 검출에 성공하면 잡은 대상(미니맵·아이콘·타이머)으로
+        좁혀지고, 실패하면 탐색 범위 전체를 보여주며 오른쪽에 어느 쪽인지 표시됩니다.
+        안쪽 얇은 사각형은 하위 판독 영역(룬 후보 위치, 부스터 숫자 크롭)입니다.
+        좌표는 모두 1366×768 클라이언트 기준입니다. 좌표 옆 <code>frame#</code>은 그 칸이 그린
+        프레임 번호이고, 뒤에 <code>(결과 frame#…)</code>이 붙으면 판정에 쓰인 프레임과
+        다르다는 뜻입니다.
+      </div>
+    </section>
+
+    <section>
+      <h2>버프 목록 <span id="buffMeta" class="dim" style="text-transform:none;font-weight:400"></span></h2>
+      <div class="tablewrap">
+        <table id="buffTable">
+          <colgroup><col style="width:11%"><col style="width:37%"><col style="width:18%">
+                    <col style="width:16%"><col style="width:18%"></colgroup>
+          <thead><tr><th>분류 ID</th><th>버프 이름</th><th>잔여시간</th><th>화면 숫자</th><th>최근 판독</th></tr></thead>
+          <tbody id="buffBody"><tr><td colspan="5" class="dim">—</td></tr></tbody>
+        </table>
+      </div>
+      <div class="note">
+        미확인 숫자는 스택일 수 있어 사용자 확인 전에는 시간으로 단정하지 않습니다.
+        분 표시는 분 해상도의 관측값이며 초 단위 정확도가 아닙니다.
+        마지막 열은 <b>그 항목이 마지막으로 판독된 시점</b>입니다. 전체 버프는 항목별로 도착하므로
+        오래된 항목은 &lsquo;이전 판독&rsquo;으로 표시되며 최신값으로 쓰지 않습니다.
+      </div>
+    </section>
+  </div>
+
+  <div style="display:grid;gap:16px;min-width:0">
+    <section>
+      <h2>공유 화면 및 보정</h2>
+      <canvas id="preview" width="640" height="360"></canvas>
+      <div id="shareInfo" class="dim" style="font-size:11px;margin-top:6px">공유 전</div>
+      <div id="calib" class="calib">공유를 시작하면 게임 클라이언트 영역을 자동으로 찾습니다.</div>
+      <div id="calibList" class="chips"></div>
+      <div class="note">
+        자동 보정이 빗나가면 미리보기 위에서 게임 화면 영역을 드래그해 직접 지정하세요.
+        모든 ROI는 1366×768 클라이언트 기준이며, 지정한 영역이 그 크기로 리샘플링됩니다.
+      </div>
+    </section>
+
+    <section>
+      <h2>알림 및 진단</h2>
+      <div id="fps" class="dim" style="font-size:11px;margin-bottom:8px">—</div>
+      <div id="log"></div>
+    </section>
+  </div>
+</main>
+
+<script src="src/parse.js"></script>
+<script src="src/state.js"></script>
+<script src="src/glyphs.js"></script>
+<script src="src/accumulate.js"></script>
+<script src="src/display.js"></script>
+<script src="src/regions.js"></script>
+<script src="src/capture.js"></script>
+<script src="src/alerts.js"></script>
+<script src="src/main.js"></script>
+<script>
+/* 표본 녹화(선택). URL 에 ?rec=<분> 이 있을 때만 녹화기를 불러온다.
+   평소 실행 경로에는 아무 영향이 없다 — 이 스크립트는 파라미터가 없으면
+   아무것도 하지 않는다. 자세한 절차는 AGENT_HANDOFF.md 부록 D. */
+(function () {
+  var q = new URLSearchParams(location.search);
+  if (!q.has('rec')) return;
+  var num = function (k, d) { var v = parseFloat(q.get(k)); return isFinite(v) ? v : d; };
+  fetch('tools/record_session.js').then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).then(function (src) {
+    (0, eval)(src);
+    window.ASTRA_REC.autoStart({
+      minutes: num('rec', 30),
+      hz: num('hz', 1),
+      encoders: num('encoders', 2),
+      budgetMB: num('budgetMB', 2600),
+      mode: q.get('mode') === 'regions' ? 'regions' : 'full'
+    });
+  }).catch(function (e) {
+    console.error('[REC] 녹화기 적재 실패: ' + (e && e.message || e));
+  });
+})();
+</script>
+</body>
+</html>

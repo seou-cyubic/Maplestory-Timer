@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Astra Web — 이식 검증</title>
+<style>
+  body{margin:0;padding:24px;background:#131c28;color:#e6eef8;
+       font:14px/1.6 "Malgun Gothic","Segoe UI",system-ui,sans-serif}
+  h1{font-size:17px;margin:0 0 4px}
+  p.lead{color:#93a6bd;font-size:13px;margin:0 0 16px;max-width:820px}
+  #summary{font-size:15px;font-weight:600;margin:12px 0}
+  table{width:100%;max-width:1100px;border-collapse:collapse;font-size:13px}
+  td{padding:6px 10px;border-bottom:1px solid #2f425a;vertical-align:top}
+  td:first-child{width:64px}
+  td:nth-child(2){width:42%}
+  .ok{color:#5ad6a0;font-weight:600}
+  .bad{color:#f07a7a;font-weight:600}
+  .dim{color:#93a6bd}
+  .head{color:#6aa9f0;font-weight:600;padding-top:16px;border-bottom:1px solid #6aa9f0}
+  #boot{font:12px Consolas,monospace;color:#93a6bd}
+  code{background:#1a2634;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>Astra Web — 이식 검증</h1>
+<p class="lead">
+  브라우저 파이프라인을 저장된 실화면 표본에 돌려 기대값과 직접 대조합니다.
+  <b>[실화면]</b>은 실제 게임 캡처, <b>[합성]</b>은 조건을 만들려고 이 파일이 편집한 이미지,
+  <b>정보</b>는 합격 판정이 아닌 측정값입니다. 합성 통과를 실게임 정확도로 읽지 마세요.
+  순수 판정 로직의 전체 표는 <code>node tools/state_tests.js</code>에 있습니다.
+</p>
+<div id="boot">런타임 로딩 중…</div>
+<div id="summary" class="dim">실행 중…</div>
+<table><tbody id="out"></tbody></table>
+
+<script src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.11.0-release.1/dist/opencv.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script src="src/parse.js"></script>
+<script src="src/state.js"></script>
+<script src="src/display.js"></script>
+<script src="src/regions.js"></script>
+<script src="src/ocr.js"></script>
+<script src="src/vision.js"></script>
+<script src="src/glyphs.js"></script>
+<script src="src/accumulate.js"></script>
+<script src="src/detectors.js"></script>
+<script src="src/selftest.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "rec_en.onnx": {
+    "source": "en_PP-OCRv4_rec_mobile.onnx",
+    "classes": 97,
+    "size_mb": 7.65,
+    "input": "x",
+    "output": "softmax_2.tmp_0"
+  },
+  "rec_general.onnx": {
+    "source": "PP-OCRv6_rec_small.onnx",
+    "classes": 18710,
+    "size_mb": 21.23,
+    "input": "x",
+    "output": "fetch_name_0"
+  },
+  "rec_korean.onnx": {
+    "source": "korean_PP-OCRv4_rec_mobile.onnx",
+    "classes": 3690,
+    "size_mb": 24.07,
+    "input": "x",
+    "output": "softmax_2.tmp_0"
+  }
+}

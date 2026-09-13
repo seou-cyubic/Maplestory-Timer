@@ -1,0 +1,76 @@
+{
+  "design_only": true,
+  "schema_version": 1,
+  "environment": {
+    "os": "Windows 11",
+    "monitor_count": 2,
+    "monitor_resolution": "QHD",
+    "game_mode": "windowed",
+    "game_client_size": [
+      1366,
+      768
+    ],
+    "dpi_scale": null
+  },
+  "capture": {
+    "backend": "wgc_candidate",
+    "fps": 15,
+    "queue_size": 1,
+    "stale_frame_ms": 500
+  },
+  "sampling_hz": {
+    "rune": 5,
+    "wealth_icon": 2,
+    "wealth_time": 4,
+    "experience": 10,
+    "lie_detector": 10,
+    "booster_time": 4
+  },
+  "experience": {
+    "roi": null,
+    "source": "integer_text",
+    "example": "79,580,389,573,127 [72.700%]",
+    "stall_ms": 7000,
+    "max_observation_gap_ms": 500,
+    "unknown_policy": "reset_continuity"
+  },
+  "wealth": {
+    "roi": null,
+    "duration_seconds_user_supplied": 1800,
+    "minute_resolution_at_or_above_seconds": 600,
+    "below_threshold_resolution_seconds": 1,
+    "missing_confirm_ms": 3000,
+    "time_format": ">=600s: lower-left white minutes; <600s: center yellow m:ss",
+    "rounding_rule": null
+  },
+  "booster": {
+    "roi": null,
+    "duration_seconds_user_supplied": 100,
+    "required_resolution_seconds": 1,
+    "time_format": null,
+    "rounding_rule": null
+  },
+  "rune": {
+    "roi": null,
+    "present_min_ms": 400,
+    "present_min_samples": 3,
+    "clear_ms": 2000
+  },
+  "lie_detector": {
+    "roi": null,
+    "present_min_ms": 300,
+    "present_min_samples": 3,
+    "clear_ms": 1000,
+    "repeat_ms": 5000
+  },
+  "remaining_time": {
+    "display_hz": 10,
+    "target_error_seconds_for_second_resolution": 1,
+    "unknown_display": "동기화 대기",
+    "require_uncertainty_metadata": true
+  },
+  "storage": {
+    "continuous_recording": false,
+    "save_evidence": false
+  }
+}

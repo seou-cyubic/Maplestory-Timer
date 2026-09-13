@@ -1,0 +1,194 @@
+{
+ "_note": "사람이 확대 렌더로 17/17 확인한 흰 분 숫자 라벨. 라벨은 판독기가 아니라 분이 60초에 1씩 준다는 성질 + 창 내부 불변/경계 변화/흰 잉크 존재량 검사로 세웠다. 2026-09-07 이 표본을 buff_cells 에 합쳐 아틀라스를 재생성했더니 변형 간 모호성으로 실화면 판독이 1900건 -> 350건으로 나빠져 되돌렸다. 통합에는 추가 작업이 필요하다 (부록 F).",
+ "rows": 32,
+ "cell": 32,
+ "cells": [
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f01092",
+   "x": 1172,
+   "y": 41,
+   "text": "10",
+   "offset": 0,
+   "crop_x": 1172,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f01032",
+   "x": 1172,
+   "y": 41,
+   "text": "11",
+   "offset": 3072,
+   "crop_x": 1172,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00912",
+   "x": 1172,
+   "y": 41,
+   "text": "13",
+   "offset": 6144,
+   "crop_x": 1172,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00852",
+   "x": 1172,
+   "y": 41,
+   "text": "14",
+   "offset": 9216,
+   "crop_x": 1172,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00733",
+   "x": 1300,
+   "y": 112,
+   "text": "16",
+   "offset": 12288,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00673",
+   "x": 1300,
+   "y": 112,
+   "text": "17",
+   "offset": 15360,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00613",
+   "x": 1236,
+   "y": 112,
+   "text": "18",
+   "offset": 18432,
+   "crop_x": 1236,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00553",
+   "x": 1300,
+   "y": 112,
+   "text": "19",
+   "offset": 21504,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00492",
+   "x": 1332,
+   "y": 112,
+   "text": "20",
+   "offset": 24576,
+   "crop_x": 1332,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00433",
+   "x": 1300,
+   "y": 112,
+   "text": "21",
+   "offset": 27648,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00313",
+   "x": 1300,
+   "y": 112,
+   "text": "23",
+   "offset": 30720,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00253",
+   "x": 1300,
+   "y": 112,
+   "text": "24",
+   "offset": 33792,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00193",
+   "x": 1204,
+   "y": 112,
+   "text": "25",
+   "offset": 36864,
+   "crop_x": 1204,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00133",
+   "x": 1300,
+   "y": 112,
+   "text": "26",
+   "offset": 39936,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00073",
+   "x": 1300,
+   "y": 112,
+   "text": "27",
+   "offset": 43008,
+   "crop_x": 1300,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00552",
+   "x": 1332,
+   "y": 4,
+   "text": "29",
+   "offset": 46080,
+   "crop_x": 1332,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  },
+  {
+   "font": "minutes",
+   "source": "rec/rec_20260907080700/f00492",
+   "x": 1332,
+   "y": 4,
+   "text": "30",
+   "offset": 49152,
+   "crop_x": 1332,
+   "crop_w": 32,
+   "label_from": "시간 외삽 + 내용 변화 자체검증"
+  }
+ ]
+}

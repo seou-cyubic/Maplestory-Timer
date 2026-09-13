@@ -1,0 +1,288 @@
+[
+  {
+    "id": "B01",
+    "name": "영웅의 메아리",
+    "image": "assets/candidates/B01.png",
+    "approved": true,
+    "time_mode": "minutes",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B02",
+    "name": "루나 익스텐션",
+    "image": "assets/candidates/B02.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B03",
+    "name": "루나 게더링",
+    "image": "assets/candidates/B03.png",
+    "approved": true,
+    "time_mode": "stack",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B04",
+    "name": "째깍째깍 동화 시간 Lv.3",
+    "image": "assets/candidates/B04.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B05",
+    "name": "째깍째깍 동화 시간 Lv.2",
+    "image": "assets/candidates/B05.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B06",
+    "name": "째깍째깍 동화 시간 Lv.1",
+    "image": "assets/candidates/B06.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B07",
+    "name": "훈련 일지",
+    "image": "assets/candidates/B07.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B08",
+    "name": "버닝 BEYOND",
+    "image": "assets/candidates/B08.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "B09",
+    "name": "아티팩트의 힘",
+    "image": "assets/candidates/B09.png",
+    "approved": true,
+    "time_mode": "none",
+    "name_source": "local tooltip 2026-09-05"
+  },
+  {
+    "id": "T01",
+    "name": "사용자 확인 단기 버프",
+    "image": "assets/candidates/T01.png",
+    "approved": true,
+    "time_mode": "clock"
+  },
+  {
+    "id": "T02",
+    "name": "사용자 확인 분 단위 버프",
+    "image": "assets/candidates/T02.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P01",
+    "name": "사용자 제공 버프 1",
+    "image": "assets/candidates/P01.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P02",
+    "name": "사용자 제공 버프 2",
+    "image": "assets/candidates/P02.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P03",
+    "name": "사용자 제공 버프 3",
+    "image": "assets/candidates/P03.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P04",
+    "name": "소형 재물 획득의 비약",
+    "image": "assets/candidates/P04.png",
+    "approved": true,
+    "time_mode": "wealth"
+  },
+  {
+    "id": "P05",
+    "name": "사용자 제공 버프 5",
+    "image": "assets/candidates/P05.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P06",
+    "name": "사용자 제공 버프 6",
+    "image": "assets/candidates/P06.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P07",
+    "name": "사용자 제공 버프 7",
+    "image": "assets/candidates/P07.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "P08",
+    "name": "사용자 제공 버프 8",
+    "image": "assets/candidates/P08.png",
+    "approved": true,
+    "time_mode": "minutes"
+  },
+  {
+    "id": "U00",
+    "name": "추가 버프 U00 (이름 미확인)",
+    "image": "assets/candidates/U00.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U01",
+    "name": "추가 버프 U01 (이름 미확인)",
+    "image": "assets/candidates/U01.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U02",
+    "name": "추가 버프 U02 (이름 미확인)",
+    "image": "assets/candidates/U02.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U03",
+    "name": "추가 버프 U03 (이름 미확인)",
+    "image": "assets/candidates/U03.png",
+    "approved": false,
+    "time_mode": "unknown",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U04",
+    "name": "추가 버프 U04 (이름 미확인)",
+    "image": "assets/candidates/U04.png",
+    "approved": false,
+    "time_mode": "unknown",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U05",
+    "name": "추가 버프 U05 (이름 미확인)",
+    "image": "assets/candidates/U05.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U06",
+    "name": "추가 버프 U06 (이름 미확인)",
+    "image": "assets/candidates/U06.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U07",
+    "name": "추가 버프 U07 (이름 미확인)",
+    "image": "assets/candidates/U07.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U08",
+    "name": "추가 버프 U08 (이름 미확인)",
+    "image": "assets/candidates/U08.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U10",
+    "name": "추가 버프 U10 (이름 미확인)",
+    "image": "assets/candidates/U10.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U11",
+    "name": "추가 버프 U11 (이름 미확인)",
+    "image": "assets/candidates/U11.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U12",
+    "name": "추가 버프 U12 (이름 미확인)",
+    "image": "assets/candidates/U12.png",
+    "approved": true,
+    "time_mode": "seconds",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U13",
+    "name": "추가 버프 U13 (이름 미확인)",
+    "image": "assets/candidates/U13.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U14",
+    "name": "추가 버프 U14 (이름 미확인)",
+    "image": "assets/candidates/U14.png",
+    "approved": true,
+    "time_mode": "minutes",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U15",
+    "name": "추가 버프 U15 (이름 미확인)",
+    "image": "assets/candidates/U15.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U16",
+    "name": "추가 버프 U16 (이름 미확인)",
+    "image": "assets/candidates/U16.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U17",
+    "name": "추가 버프 U17 (이름 미확인)",
+    "image": "assets/candidates/U17.png",
+    "approved": true,
+    "time_mode": "clock",
+    "name_source": "user confirmed time unit, name unknown"
+  },
+  {
+    "id": "U18",
+    "name": "추가 버프 U18 (이름 미확인)",
+    "image": "assets/candidates/U18.png",
+    "approved": false,
+    "time_mode": "unknown",
+    "name_source": "user confirmed time unit, name unknown"
+  }
+]

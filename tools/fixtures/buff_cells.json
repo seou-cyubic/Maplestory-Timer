@@ -1,0 +1,418 @@
+{
+ "_note": "실화면에서 오려낸 버프 아이콘 32x32 칸 (32px 등간격 격자). 칸보다 넓게 자르지 않는다 — 여백을 주면 옆 아이콘의 숫자가 따라들어와 판독을 망가뜨렸다. bin 은 BGR 행우선 원본 화소. text 는 사람이 확대 렌더를 보고 적은 정답이다.",
+ "cell": 32,
+ "channels": 3,
+ "cells": [
+  {
+   "font": "yellow",
+   "source": "live_rune_dark",
+   "x": 1172,
+   "y": 4,
+   "text": "5:13",
+   "offset": 0,
+   "crop_x": 1172,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_rune_dark",
+   "x": 980,
+   "y": 41,
+   "text": "18",
+   "offset": 3072,
+   "crop_x": 980,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_rune_dark",
+   "x": 1044,
+   "y": 41,
+   "text": "10",
+   "offset": 6144,
+   "crop_x": 1044,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_rune_dark",
+   "x": 1076,
+   "y": 41,
+   "text": "2:12",
+   "offset": 9216,
+   "crop_x": 1076,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_rune_dark",
+   "x": 1172,
+   "y": 41,
+   "text": "4:23",
+   "offset": 12288,
+   "crop_x": 1172,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_booster",
+   "x": 1108,
+   "y": 4,
+   "text": "5:08",
+   "offset": 15360,
+   "crop_x": 1108,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_booster",
+   "x": 948,
+   "y": 41,
+   "text": "10",
+   "offset": 18432,
+   "crop_x": 948,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_booster",
+   "x": 1108,
+   "y": 41,
+   "text": "7:14",
+   "offset": 21504,
+   "crop_x": 1108,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_a",
+   "x": 1204,
+   "y": 4,
+   "text": "1:03",
+   "offset": 24576,
+   "crop_x": 1204,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_a",
+   "x": 948,
+   "y": 41,
+   "text": "29",
+   "offset": 27648,
+   "crop_x": 948,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_a",
+   "x": 980,
+   "y": 41,
+   "text": "29",
+   "offset": 30720,
+   "crop_x": 980,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_a",
+   "x": 1012,
+   "y": 41,
+   "text": "22",
+   "offset": 33792,
+   "crop_x": 1012,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_a",
+   "x": 1044,
+   "y": 41,
+   "text": "1:51",
+   "offset": 36864,
+   "crop_x": 1044,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_a",
+   "x": 1076,
+   "y": 41,
+   "text": "3:21",
+   "offset": 39936,
+   "crop_x": 1076,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 948,
+   "y": 41,
+   "text": "6",
+   "offset": 43008,
+   "crop_x": 948,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 980,
+   "y": 41,
+   "text": "6",
+   "offset": 46080,
+   "crop_x": 980,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1044,
+   "y": 41,
+   "text": "1:29",
+   "offset": 49152,
+   "crop_x": 1044,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1076,
+   "y": 41,
+   "text": "2:59",
+   "offset": 52224,
+   "crop_x": 1076,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1076,
+   "y": 4,
+   "text": "29",
+   "offset": 55296,
+   "crop_x": 1076,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1140,
+   "y": 4,
+   "text": "4:48",
+   "offset": 58368,
+   "crop_x": 1140,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1172,
+   "y": 4,
+   "text": "4:56",
+   "offset": 61440,
+   "crop_x": 1172,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1204,
+   "y": 4,
+   "text": "41",
+   "offset": 64512,
+   "crop_x": 1204,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1236,
+   "y": 4,
+   "text": "41",
+   "offset": 67584,
+   "crop_x": 1236,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1268,
+   "y": 4,
+   "text": "41",
+   "offset": 70656,
+   "crop_x": 1268,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_b",
+   "x": 1300,
+   "y": 4,
+   "text": "41",
+   "offset": 73728,
+   "crop_x": 1300,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_c",
+   "x": 948,
+   "y": 41,
+   "text": "27",
+   "offset": 76800,
+   "crop_x": 948,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_c",
+   "x": 1012,
+   "y": 41,
+   "text": "25",
+   "offset": 79872,
+   "crop_x": 1012,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_c",
+   "x": 1044,
+   "y": 41,
+   "text": "1:18",
+   "offset": 82944,
+   "crop_x": 1044,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_c",
+   "x": 1076,
+   "y": 41,
+   "text": "2:48",
+   "offset": 86016,
+   "crop_x": 1076,
+   "crop_w": 32
+  },
+  {
+   "font": "yellow",
+   "source": "live_buffs_c",
+   "x": 1108,
+   "y": 4,
+   "text": "5:11",
+   "offset": 89088,
+   "crop_x": 1108,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_a",
+   "x": 1108,
+   "y": 41,
+   "text": "13",
+   "offset": 92160,
+   "crop_x": 1108,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_a",
+   "x": 1140,
+   "y": 41,
+   "text": "11",
+   "offset": 95232,
+   "crop_x": 1140,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_a",
+   "x": 1172,
+   "y": 41,
+   "text": "11",
+   "offset": 98304,
+   "crop_x": 1172,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_a",
+   "x": 1204,
+   "y": 41,
+   "text": "11",
+   "offset": 101376,
+   "crop_x": 1204,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_b",
+   "x": 1108,
+   "y": 41,
+   "text": "13",
+   "offset": 104448,
+   "crop_x": 1108,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_b",
+   "x": 1140,
+   "y": 41,
+   "text": "10",
+   "offset": 107520,
+   "crop_x": 1140,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_b",
+   "x": 1172,
+   "y": 41,
+   "text": "10",
+   "offset": 110592,
+   "crop_x": 1172,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_b",
+   "x": 1204,
+   "y": 41,
+   "text": "10",
+   "offset": 113664,
+   "crop_x": 1204,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_b",
+   "x": 1332,
+   "y": 4,
+   "text": "20",
+   "offset": 116736,
+   "crop_x": 1332,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_c",
+   "x": 1108,
+   "y": 41,
+   "text": "13",
+   "offset": 119808,
+   "crop_x": 1108,
+   "crop_w": 32
+  },
+  {
+   "font": "minutes",
+   "source": "live_buffs_c",
+   "x": 1140,
+   "y": 41,
+   "text": "10",
+   "offset": 122880,
+   "crop_x": 1140,
+   "crop_w": 32
+  }
+ ],
+ "rows": 32
+}

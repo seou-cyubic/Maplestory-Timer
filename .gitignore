@@ -1,0 +1,28 @@
+# Python (legacy 구현)
+legacy/.venv/
+legacy/.pytest_cache/
+legacy/work/
+__pycache__/
+*.egg-info/
+*.log
+
+# 게임 화면 캡처 — 캐릭터 닉네임·길드명이 찍혀 있음
+assets/samples/
+assets/candidates/client.png
+assets/candidates/timed_client.png
+legacy/assets/candidates/client.png
+legacy/assets/candidates/timed_client.png
+legacy/assets/research/
+/*.png
+legacy/*.png
+
+# 백업 / AI 인계 문서 / 작업 메모
+.backup_pre_improve/
+AGENT_HANDOFF.md
+memo.txt
+legacy/docs/PLAN.md
+legacy/docs/QUESTIONS.md
+
+# 로컬 도구 설정
+.claude/
+.vscode/

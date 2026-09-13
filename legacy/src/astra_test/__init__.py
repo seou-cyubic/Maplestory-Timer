@@ -1,0 +1,1 @@
+"""Local MapleStory visual observer."""
