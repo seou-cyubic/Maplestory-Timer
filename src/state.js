@@ -31,7 +31,7 @@
     // reported "1.19s" while the booster really had ~17 s left. Still used by
     // the potion path; the booster path no longer feeds it.
     timerConsistencyFilter: true,
-    stallSeconds: 7,
+    stallSeconds: 8,        // 사용자 지시 2026-09-15: 7초 -> 8초
     /* How long a hole between experience observations may be before tracking
        restarts from a new baseline.
 

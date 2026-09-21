@@ -50,7 +50,7 @@ Chrome の画面共有でメイプルストーリーのゲーム画面を**見�
 #### 4. 判定ロジック — `src/state.js`, `src/display.js`
 
 - **ブースター終了**: 残り時間を「測る」のではなく、残り時間 UI が**存在するか**だけを見ます。`UNSEEN → VISIBLE → DISAPPEARANCE_CANDIDATE → CHECK_RUNE → RESOLVED` の状態機械で、UI が消えた瞬間のルーン持続時間が 1 分 50 秒以上なら 1 回だけ通知します。共有の途切れや古い結果 (`UNKNOWN`) は決して「消えた」とは扱いません。
-- **経験値の停滞**: 数字を読まず、経験値文字領域の明るい画素の列分布を**シグネチャ**として 7 秒以上変化がなければ停滞と判定します (同一フレーム差 0、実際の変化 179、閾値 6)。ストリームが固まった場合は画面全体のシグネチャで区別します。
+- **経験値の停滞**: 数字を読まず、経験値文字領域の明るい画素の列分布を**シグネチャ**として 8 秒以上変化がなければ停滞と判定します (同一フレーム差 0、実際の変化 179、閾値 6)。ストリームが固まった場合は画面全体のシグネチャで区別します。
 - **表示用タイマー**: 画面の数字を 1 回読んで同期し、以降は自動カウントダウンします。ポーションは数字領域の変化を約 1 秒ごとに検出し、分表示が切り替わる瞬間に再同期して精度を上げます。表示は判定とは無関係です。
 
 #### 5. 検証体制 — `tools/state_tests.js`, `selftest.html`, `tools/`
@@ -115,7 +115,7 @@ It never automates game input, never solves or answers the lie detector, and nev
 #### 4. Decision logic — `src/state.js`, `src/display.js`
 
 - **Booster end**: instead of *timing* the booster, the app only asks whether its remaining-time UI **exists**. A state machine — `UNSEEN → VISIBLE → DISAPPEARANCE_CANDIDATE → CHECK_RUNE → RESOLVED` — fires exactly one alert when the UI disappears while the rune buff has at least 1:50 left. A dropped share or stale result (`UNKNOWN`) is never treated as a disappearance.
-- **Experience stall**: no digits are read. The column-wise distribution of bright pixels in the experience text becomes a **signature**; no change for 7 seconds means a stall (identical frames differ by 0, a real change by 179, threshold 6). A frozen stream is recognised from a whole-screen signature and not counted.
+- **Experience stall**: no digits are read. The column-wise distribution of bright pixels in the experience text becomes a **signature**; no change for 8 seconds means a stall (identical frames differ by 0, a real change by 179, threshold 6). A frozen stream is recognised from a whole-screen signature and not counted.
 - **Display timers**: the on-screen number is read once to sync, then a local countdown takes over. For potions the digit area is checked for change about once a second and re-synced the instant the minute display ticks, which makes the countdown accurate. Display never feeds the decision.
 
 #### 5. Verification — `tools/state_tests.js`, `selftest.html`, `tools/`
@@ -180,7 +180,7 @@ Chrome 화면 공유로 메이플스토리 게임 화면을 **보기만** 하면
 #### 4. 판정 로직 — `src/state.js`, `src/display.js`
 
 - **부스터 종료**: 남은 시간을 *재는* 대신 남은 시간 UI가 **존재하는지**만 봅니다. `UNSEEN → VISIBLE → DISAPPEARANCE_CANDIDATE → CHECK_RUNE → RESOLVED` 상태 기계로, UI가 사라진 그 프레임의 룬 지속시간이 1분 50초 이상이면 알림을 정확히 한 번 냅니다. 공유 끊김이나 오래된 결과(`UNKNOWN`)는 절대 소멸로 치지 않습니다.
-- **경험치 정체**: 숫자를 읽지 않습니다. 경험치 글자 영역의 밝은 화소 열별 분포를 **서명**으로 삼아 7초 이상 변화가 없으면 정체로 판정합니다(같은 프레임 변화량 0, 실제 변화 179, 임계 6). 스트림이 얼어붙은 경우는 전체 화면 서명으로 구분합니다.
+- **경험치 정체**: 숫자를 읽지 않습니다. 경험치 글자 영역의 밝은 화소 열별 분포를 **서명**으로 삼아 8초 이상 변화가 없으면 정체로 판정합니다(같은 프레임 변화량 0, 실제 변화 179, 임계 6). 스트림이 얼어붙은 경우는 전체 화면 서명으로 구분합니다.
 - **표시용 타이머**: 화면 숫자를 한 번 읽어 싱크한 뒤 자동으로 카운트다운합니다. 비약은 숫자 영역 변화를 약 1초마다 감지해, 분 표시가 바뀌는 순간 다시 싱크하여 정확도를 높입니다. 표시는 판정과 무관합니다.
 
 #### 5. 검증 체계 — `tools/state_tests.js`, `selftest.html`, `tools/`

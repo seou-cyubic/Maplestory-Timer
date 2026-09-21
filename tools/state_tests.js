@@ -510,7 +510,7 @@ section('표시 전용 카운트다운 (2026-09-06 사용자 요청)');
 section('경험치 활동 감지 (숫자 대신 화면 변화)');
 {
   function run(steps, stall) {
-    const a = new S.ExperienceActivity(stall === undefined ? 7 : stall);
+    const a = new S.ExperienceActivity(stall)   // 기본값(state.js)을 그대로 시험한다;
     const fired = [];
     steps.forEach(function (s2) { if (a.update(s2)) fired.push(s2.now); });
     return { a: a, fired: fired };
@@ -524,12 +524,12 @@ section('경험치 활동 감지 (숫자 대신 화면 변화)');
   ok('계속 변하면 정체 알림 없음', r.fired.length === 0 && r.a.status === 'TRACKING',
     r.fired.length + '회 · ' + r.a.status, '0회 · TRACKING');
 
-  // 멈춤 = 7초 뒤 정확히 1회
+  // 멈춤 = 8초 뒤 정확히 1회 (7초에는 아직 울리지 않는다)
   steps = [obs(true, 0)];
   for (let t = 1; t <= 60; t++) steps.push(obs(false, t * 0.5));
   r = run(steps);
-  ok('7초 무변화면 정확히 1회', r.fired.length === 1 && Math.abs(r.fired[0] - 7) < 0.6,
-    r.fired.length + '회 @ ' + r.fired[0] + '초', '1회 @ 7초');
+  ok('8초 무변화면 정확히 1회', r.fired.length === 1 && Math.abs(r.fired[0] - 8) < 0.6,
+    r.fired.length + '회 @ ' + r.fired[0] + '초', '1회 @ 8초');
 
   // 다시 변하면 재무장, 또 멈추면 다시 1회
   steps = [obs(true, 0)];
