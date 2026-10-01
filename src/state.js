@@ -449,7 +449,29 @@
 
      UNKNOWN (share stopped, calibrating, stale result, invalid frame) never
      counts as a disappearance and drops the arming, so a blink or a covered
-     frame cannot produce an alert. */
+     frame cannot produce an alert.
+
+     내부 타이머 유지 (사용자 지시 2026-10-01):
+
+       "타이머가 있는 걸 UI 를 인식했다 못했다 하면, 내부 타이머에 따라서
+        유지하라. 부스터를 인식했다 못했다를 반복하니까 알람이 계속 울린다."
+
+     UI 탐지가 깜빡이면 VISIBLE -> 소멸 확정 -> 알림 -> 다시 VISIBLE -> ...
+     로 같은 부스터에서 알림이 여러 번 나왔다. 그래서 관측에 내부 타이머의
+     잔여(`timerRemaining`, 화면 숫자로 한 번 맞춘 뒤 스스로 흐르는 값)를
+     함께 받는다.
+
+       - 타이머에 시간이 남아 있으면 ABSENT 는 **탐지 누락**이다. 소멸 후보를
+         만들지 않고 VISIBLE 을 유지한다.
+       - 타이머가 다 되었거나(여유 이내) 타이머가 없을 때만 예전처럼
+         소멸로 본다.
+       - 한 번 판정이 끝난(RESOLVED) 부스터는, 새로 맞춰진 타이머가 보이거나
+         일정 시간이 지나기 전에는 다시 무장하지 않는다. 끝자락에서 UI 가
+         깜빡여도 알림은 한 번이다.
+
+     타이머는 '언제 끝나는가'를 정하지 않는다 - 알림은 여전히 UI 가 실제로
+     사라진 것을 본 뒤에만, 룬 지속시간 조건으로만 난다. 타이머는 '아직
+     끝났을 리 없다'를 말해 줄 뿐이다. */
 
   var RUNE_THRESHOLD_SECONDS = 110;          // 1분 50초
 
@@ -460,6 +482,12 @@
     this.confirmPresent = opts.confirmPresent === undefined ? 2 : opts.confirmPresent;
     this.confirmAbsent = opts.confirmAbsent === undefined ? 2 : opts.confirmAbsent;
     this.maxRuneRetries = opts.maxRuneRetries === undefined ? 3 : opts.maxRuneRetries;
+    // 내부 타이머 잔여가 이 값보다 크면 ABSENT 를 탐지 누락으로 본다.
+    this.holdMarginSeconds = opts.holdMarginSeconds === undefined ? 2 : opts.holdMarginSeconds;
+    // 판정이 끝난 뒤 이 시간 안의 재등장은 같은 부스터의 깜빡임으로 본다.
+    this.rearmSeconds = opts.rearmSeconds === undefined ? 10 : opts.rearmSeconds;
+    this.holds = 0;
+    this.resolvedAt = null;
     this.counter = 0;
     this.history = [];
     this.reset('init');
@@ -481,6 +509,7 @@
       reason: this.reason,
       present_run: this.presentRun,
       disappearance_id: this.candidate ? this.candidate.id : null,
+      holds: this.holds,
       candidate_rune: this.candidate ? this.candidate.rune : null,
       rune_retries: this.candidate ? this.candidate.retries : 0,
       last_decision: this.lastDecision
@@ -532,8 +561,21 @@
       return out;
     }
 
+    var timerLeft = (o.timerRemaining === undefined || o.timerRemaining === null ||
+                     isNaN(o.timerRemaining)) ? null : Number(o.timerRemaining);
+    var timerHolds = timerLeft !== null && timerLeft > this.holdMarginSeconds;
+
     if (presence === 'PRESENT') {
       this.absentRun = 0;
+      if (this.state === 'RESOLVED' && !timerHolds && this.resolvedAt !== null &&
+          o.capturedAt !== undefined && o.capturedAt !== null &&
+          o.capturedAt - this.resolvedAt < this.rearmSeconds) {
+        // 방금 끝난 부스터의 UI 가 끝자락에서 깜빡이는 것. 다시 무장하면
+        // 같은 부스터로 알림이 또 난다.
+        this.presentRun = 0;
+        this.reason = 'present_after_resolved_same_booster';
+        return out;
+      }
       if (this.candidate) {
         // §4.3.4: back on screen, the disappearance never happened.
         out.decision = { disappearance_id: this.candidate.id, outcome: 'cancelled', reason: 'ui_returned' };
@@ -552,6 +594,21 @@
     }
 
     // presence === 'ABSENT'
+    if (timerHolds && (this.state === 'VISIBLE' || this.state === 'DISAPPEARANCE_CANDIDATE' ||
+                       this.state === 'CHECK_RUNE')) {
+      // 내부 타이머에 시간이 남아 있다 - UI 가 사라진 게 아니라 못 본 것이다.
+      if (this.candidate) {
+        out.decision = { disappearance_id: this.candidate.id, outcome: 'cancelled',
+                         reason: 'held_by_timer', timer_remaining: timerLeft };
+        this.lastDecision = out.decision;
+        this.candidate = null;
+      }
+      this.absentRun = 0;
+      this.state = 'VISIBLE';
+      this.reason = 'held_by_timer';
+      this.holds += 1;
+      return out;
+    }
     this.presentRun = 0;
     if (this.state === 'UNSEEN' || this.state === 'RESOLVED') {
       // §4.3.1: never seen (or already resolved and not re-armed) - nothing to end.
@@ -618,6 +675,8 @@
         c.runeFromRetry = true;
       }
     }
+
+    if (o && o.capturedAt !== undefined && o.capturedAt !== null) this.resolvedAt = o.capturedAt;
 
     if (rune && rune.observedSeconds !== null) {
       var fired = rune.observedSeconds >= this.thresholdSeconds;

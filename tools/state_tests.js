@@ -207,10 +207,17 @@ section('§8.1  부스터 — UI 소멸 + 룬 지속시간 (합성)');
 {
   const r = drive([
     { p: 'PRESENT' }, { p: 'PRESENT' },
-    { p: 'ABSENT', rune: rune(150) }, { p: 'ABSENT', rune: rune(150) },
-    { p: 'PRESENT' }, { p: 'PRESENT' },
     { p: 'ABSENT', rune: rune(150) }, { p: 'ABSENT', rune: rune(150) }
-  ]);
+  ].concat(
+    /* 새 주기는 **시간이 지난 뒤**의 재등장이다. 예전 수열은 판정 1초 뒤에
+       UI 가 다시 나타나는 것이었는데, 그건 새 부스터가 아니라 같은 부스터의
+       UI 가 깜빡이는 모습이고 바로 그 때문에 알람이 반복해서 울렸다
+       (사용자 보고 2026-10-01). 그 경우는 아래 '끝자락 깜빡임' 시험이 맡고,
+       여기서는 재무장 대기(10초)가 지난 뒤의 진짜 새 주기를 본다. */
+    Array.from({ length: 22 }, function () { return { p: 'ABSENT' }; }),
+    [{ p: 'PRESENT' }, { p: 'PRESENT' },
+     { p: 'ABSENT', rune: rune(150) }, { p: 'ABSENT', rune: rune(150) }]
+  ));
   ok('새 UI 확인 후 다음 소멸 → 새 주기 알림 (총 2회)',
     r.events.length === 2 && r.events[0].disappearance_id !== r.events[1].disappearance_id,
     r.events.length + '회 · ' + r.events.map(function (e) { return e.disappearance_id; }).join(','),
@@ -269,6 +276,96 @@ section('§8.1  부스터 — UI 소멸 + 룬 지속시간 (합성)');
   ]);
   ok('소멸 후 ABSENT가 계속돼도 알림은 정확히 1회',
     r.events.length === 1, r.events.length + '회', '1회');
+}
+
+/* ------------------------------------------------------------------ */
+section('부스터 — UI 탐지가 깜빡여도 내부 타이머로 유지 (사용자 지시 2026-10-01)');
+{
+  /* "타이머가 있는 걸 UI 를 인식했다 못했다 하면, 내부 타이머에 따라서
+      유지하라. 부스터를 인식했다 못했다를 반복하니까 알람이 계속 울린다." */
+  function flicker(withTimer) {
+    const m = new S.BoosterUiState();
+    const events = [];
+    let frame = 0;
+    const step = function (p, left) {
+      frame += 1;
+      const r = m.update({ presence: p, frameId: frame, capturedAt: frame * 0.5,
+                           rune: rune(150), timerRemaining: withTimer ? left : null });
+      if (r.event) events.push(frame);
+    };
+    let left = 60;
+    step('PRESENT', left); step('PRESENT', left);
+    // 60초 남은 부스터의 UI 를 2~3프레임씩 못 봤다 봤다를 다섯 번 반복한다.
+    for (let k = 0; k < 5; k++) {
+      for (let a = 0; a < 3; a++) { left -= 0.5; step('ABSENT', left); }
+      for (let b = 0; b < 3; b++) { left -= 0.5; step('PRESENT', left); }
+    }
+    return { m: m, events: events };
+  }
+  const held = flicker(true);
+  ok('타이머에 시간이 남아 있으면 깜빡임으로 알림이 나지 않는다',
+    held.events.length === 0 && held.m.state === 'VISIBLE' && held.m.holds > 0,
+    held.events.length + '회 · ' + held.m.state + ' · 유지 ' + held.m.holds + '회', '0회 · VISIBLE');
+
+  /* 타이머 없이는 예전 동작 그대로다 — 이 시험이 고친 결함을 붙들어 둔다.
+     (재무장 대기 10초 덕에 5번이 전부 울리지는 않지만, 한 번은 잘못 울린다.) */
+  const bare = flicker(false);
+  ok('타이머가 없으면 깜빡임이 소멸로 읽힌다 (유지가 막는 바로 그 오경보)',
+    bare.events.length >= 1, bare.events.length + '회', '1회 이상');
+
+  /* 타이머가 다 되고 UI 가 실제로 사라지면 정확히 한 번 울린다. */
+  {
+    const m = new S.BoosterUiState();
+    const ev = [];
+    let frame = 0;
+    const step = function (p, left) {
+      frame += 1;
+      const r = m.update({ presence: p, frameId: frame, capturedAt: frame * 0.5,
+                           rune: rune(150), timerRemaining: left });
+      if (r.event) ev.push(frame);
+    };
+    step('PRESENT', 3); step('PRESENT', 2.5);
+    step('ABSENT', 2.2);                 // 아직 여유(2초)보다 많이 남음 -> 유지
+    step('PRESENT', 1.5);
+    step('ABSENT', 0.5); step('ABSENT', 0);        // 타이머가 다 됐다 -> 진짜 소멸
+    // 끝자락에서 UI 가 다시 깜빡인다
+    step('PRESENT', 0); step('PRESENT', 0); step('ABSENT', 0); step('ABSENT', 0);
+    step('PRESENT', null); step('PRESENT', null); step('ABSENT', null); step('ABSENT', null);
+    ok('타이머가 끝나고 UI 가 사라지면 정확히 1회 — 끝자락 깜빡임은 다시 울리지 않는다',
+      ev.length === 1 && ev[0] === 6, ev.length + '회 @ 프레임 ' + ev.join(','), '1회 @ 프레임 6');
+  }
+
+  /* 유지 중에 잡혀 있던 소멸 후보는 취소된다. */
+  {
+    const m = new S.BoosterUiState();
+    m.update({ presence: 'PRESENT', frameId: 1, capturedAt: 0.5 });
+    m.update({ presence: 'PRESENT', frameId: 2, capturedAt: 1.0 });
+    m.update({ presence: 'ABSENT', frameId: 3, capturedAt: 1.5, rune: rune(150) });   // 타이머 아직 없음 -> 후보
+    const r = m.update({ presence: 'ABSENT', frameId: 4, capturedAt: 2.0, rune: rune(150), timerRemaining: 40 });
+    ok('타이머가 맞춰지면 진행 중이던 소멸 후보를 취소한다',
+      !r.event && r.decision && r.decision.reason === 'held_by_timer' && m.state === 'VISIBLE',
+      (r.decision ? r.decision.outcome + '·' + r.decision.reason : 'none') + ' · ' + m.state,
+      'cancelled·held_by_timer · VISIBLE');
+  }
+
+  /* 표시 타이머도 같이 유지된다: 사라졌다가 99초로 되돌아가지 않는다. */
+  {
+    const d = new D.DisplayCountdown({ seconds: 99, decimals: 2, overrunSeconds: 1, format: 'seconds' });
+    const a = d.follow(true, 0, 1, 2);
+    d.syncTo(60, 0);
+    const b = d.follow(false, 5, 1, 2);            // 못 봄
+    const c = d.follow(true, 8, 2, 2);             // 새 sighting 번호로 다시 봄
+    ok('표시 타이머: 못 봐도 흐르고, 다시 보면 이어 받는다',
+      a === 'started' && b === 'held' && c === 'adopted' && Math.abs(d.remaining(8) - 52) < 0.01,
+      [a, b, c].join('/') + ' · ' + d.remaining(8).toFixed(2) + '초', 'started/held/adopted · 52.00초');
+    const e = d.follow(false, 59, 2, 2);           // 잔여 1초 <= 여유 2초
+    ok('표시 타이머: 시간이 다 되면 유지하지 않는다', e === 'stopped' && d.text(59) === null,
+      e + ' · ' + d.text(59), 'stopped · null');
+    const u = new D.DisplayCountdown({ seconds: 99, decimals: 2, overrunSeconds: 1, format: 'seconds' });
+    u.follow(true, 0, 1, 2);                       // 화면 숫자로 맞춘 적 없음
+    ok('표시 타이머: 맞춘 적이 없으면 유지하지 않는다 (믿을 값이 없다)',
+      u.follow(false, 1, 1, 2) === 'stopped', 'stopped', 'stopped');
+  }
 }
 
 section('§4.4  룬 버프 미확인 상태');

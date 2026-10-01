@@ -85,6 +85,35 @@
     if (this.startedAt === null || token !== this.token) this.start(now, token);
   };
 
+  /* 탐지가 깜빡여도 **맞춰 둔 타이머를 유지한다** (사용자 지시 2026-10-01).
+
+     sync() 는 대상이 안 보이면 곧바로 멈추고, 다시 보이면 처음부터 다시 센다.
+     부스터 UI 탐지가 인식했다 못했다를 반복하면 그때마다 표시가 사라졌다가
+     99초로 되돌아갔다. 화면 숫자로 한 번 맞춘 타이머에 시간이 남아 있으면
+     그 타이머가 더 믿을 만하므로:
+
+       안 보임 + 맞춘 타이머에 시간 남음  -> 'held'    (그대로 흐른다)
+       다시 보임 + 유지 중이던 타이머      -> 'adopted' (같은 대상으로 이어 받음)
+       그 밖                               -> sync() 와 같다
+
+     돌려주는 값은 호출자가 '새 대상인가'를 알기 위한 것이다. */
+  DisplayCountdown.prototype.follow = function (present, now, token, marginSeconds) {
+    var margin = marginSeconds === undefined ? 0 : marginSeconds;
+    var alive = this.startedAt !== null && this.synced() && this.remaining(now) > margin;
+    if (!present) {
+      if (alive) return 'held';
+      this.stop();
+      return 'stopped';
+    }
+    if (alive && token !== this.token) {
+      this.token = token === undefined ? null : token;
+      return 'adopted';
+    }
+    var fresh = this.startedAt === null || token !== this.token;
+    this.sync(true, now, token);
+    return fresh ? 'started' : 'running';
+  };
+
   DisplayCountdown.prototype.elapsed = function (now) {
     return this.startedAt === null ? null : Math.max(0, now - this.startedAt);
   };

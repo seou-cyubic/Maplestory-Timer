@@ -27,6 +27,8 @@
   var TIMER_HIDDEN_BELOW = 5;
   var WEALTH_DISPLAY_SECONDS = 1800;     // user-confirmed P04 duration
   var BOOSTER_DISPLAY_SECONDS = 99;
+  // 내부 타이머 잔여가 이보다 크면 UI 미검출을 '탐지 누락'으로 본다.
+  var BOOSTER_HOLD_MARGIN = 2;
   /* 첫 판독 전에만 쓰는 명목 길이다. 첫 판독이 오면 그 값으로 다시 놓는다. */
   var RUNE_DURATION_DISPLAY_SECONDS = 600;
   var RUNE_COOLDOWN_DISPLAY_SECONDS = 3599;
@@ -286,8 +288,12 @@
       sess.partials.booster = m;
       var p = m.booster_ui && m.booster_ui.presence;
       var on = sess.booster.update(p === 'PRESENT' ? true : (p === 'ABSENT' ? false : null));
-      sess.boosterDisplay.sync(on, now(), sess.booster.sighting);
-      if (!on) sess.boosterSyncedSighting = null;
+      /* UI 탐지가 깜빡여도 맞춰 둔 내부 타이머를 유지한다 (사용자 지시
+         2026-10-01). 유지 중에 다시 보이면 같은 부스터로 이어 받고, 화면
+         숫자로 다시 맞추지도 않는다 - 흐르던 타이머가 기준이다. */
+      var how = sess.boosterDisplay.follow(on, now(), sess.booster.sighting, BOOSTER_HOLD_MARGIN);
+      if (how === 'adopted') sess.boosterSyncedSighting = sess.booster.sighting;
+      else if (how === 'stopped') sess.boosterSyncedSighting = null;
       return;
     }
     if (m.kind === 'buff') {
@@ -452,7 +458,11 @@
       frameId: payload.frame_id, capturedAt: payload.stamp,
       score: ui.score === undefined ? null : ui.score,
       bbox: ui.bbox || null,
-      rune: payload.rune_duration || null
+      rune: payload.rune_duration || null,
+      // 화면 숫자로 맞춘 내부 타이머의 잔여. 맞춘 적이 없으면 null 이고,
+      // 그때는 예전처럼 UI 존재만으로 판정한다.
+      timerRemaining: (sess.boosterDisplay.running() && sess.boosterDisplay.synced())
+        ? sess.boosterDisplay.remaining(now()) : null
     };
     var gated = A.state.gateObservation({
       presence: ui.presence,
@@ -694,7 +704,8 @@
     parts.push('UI ' + (ui ? ui.presence : '—') +
       (ui && ui.score !== null && ui.score !== undefined ? ' (앵커 ' + fmt(ui.score, 3) + '/0.78)' : '') +
       (ui && ui.reason ? ' · ' + ui.reason : ''));
-    parts.push('상태 ' + d.state + (d.reason ? '·' + d.reason : ''));
+    parts.push('상태 ' + d.state + (d.reason ? '·' + d.reason : '') +
+      (d.holds ? ' · 타이머 유지 ' + d.holds + '회' : ''));
     if (d.disappearance_id) parts.push('소멸건 ' + d.disappearance_id + ' 재판독 ' + d.rune_retries + '회');
     if (d.last_decision) {
       parts.push('최근 판정 ' + d.last_decision.outcome +
