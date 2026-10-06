@@ -5,7 +5,6 @@
              pass can never stretch the frame gap past the 0.5 s re-baseline.
      hud   - booster UI presence, rune duration, minimap/rune marker, the P04
              potion, buff-row visibility (0.5 s)
-     buffs - the full buff grid (2 s), reported item by item
      map   - the hunting-ground name above the minimap (1 s)
    Frames are pulled, never pushed, so a busy worker always skips to the
    newest frame instead of draining a backlog of stale ones.
@@ -112,7 +111,7 @@ var atlas = null;
    gets its own sync. Display only - see detectors.js readNumber. */
 var boosterSync = { done: false, value: null, raw: null, reason: 'not_attempted' };
 var expLocator = null;
-var INTERVAL = { exp: 100, hud: 500, buffs: 2000, map: 1000 };
+var INTERVAL = { exp: 100, hud: 500, map: 1000 };
 
 /* 경험치: 변화 감지가 본체, OCR은 화면 표시용 곁가지 (2026-09-06 memo).
    서명 비교는 몇 ms면 끝나므로 매 프레임 하고, OCR은 드물게만 한다. */
@@ -138,7 +137,7 @@ function init(msg) {
       need.push(ASTRA.OcrEngine.create(base + 'models/rec_general.onnx', base + 'models/rec_general.charset.json', 'general')
         .then(function (e) { engines.general = e; }));
     }
-    if (role === 'hud' || role === 'buffs') {
+    if (role === 'hud') {
       need.push(ASTRA.OcrEngine.create(base + 'models/rec_en.onnx', base + 'models/rec_en.charset.json', 'en')
         .then(function (e) { engines.en = e; }));
     }
@@ -152,7 +151,7 @@ function init(msg) {
     if (role !== 'map') ocr = new ASTRA.vision.OCR(engines.general, engines.en || engines.general);
     var after = [];
     /* 글꼴 아틀라스는 경험치와 버프 숫자가 함께 쓴다. 한 번만 읽는다. */
-    var atlasReady = (role === 'exp' || role === 'hud' || role === 'buffs')
+    var atlasReady = (role === 'exp' || role === 'hud')
       ? ASTRA.glyphs.Atlas.load(base + 'config/glyphs.json').then(function (a) {
           atlas = a; return a;
         }, function (e) {
@@ -167,7 +166,7 @@ function init(msg) {
         expLocator = new ASTRA.vision.ExpLocator(a ? a.font('exp') : null);
       }));
     }
-    if (role === 'hud' || role === 'buffs') {
+    if (role === 'hud') {
       buffs = new ASTRA.vision.BuffClassifier(ocr);
       after.push(buffs.reload(base + 'config/labels.json', base));
       after.push(atlasReady.then(function (a) {
@@ -421,18 +420,6 @@ function analyse(mat, msg, meta) {
     }
     return Promise.resolve({ experience: analyse._lastExp || null, activity: activity,
                              exp_ocr_fresh: false });
-  }
-  if (role === 'buffs') {
-    // FIX-10: report each buff as it is read, so the page shows fresh entries
-    // instead of waiting 8-13 s for the whole grid.
-    return buffs.classify(mat, null, {
-      yieldEvery: 2,
-      aborted: aborted,
-      onItem: function (item, index, total) {
-        post({ type: 'partial', kind: 'buff', item: item, index: index, total: total,
-               frameId: msg.frameId, stamp: msg.stamp, calibration: meta.calibration });
-      }
-    }).then(function (list) { return { buffs: list, buffs_rejected: list.rejected || [] }; });
   }
   if (role === 'map') {
     return Promise.resolve({ map_name: readMapName(mat, msg.stamp, msg.minimapRect || null) });

@@ -21,12 +21,13 @@
   button:disabled{opacity:.45;cursor:default}
   button.primary{background:var(--accent);border-color:var(--accent);color:#0d1620;font-weight:600}
   label.chk{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px}
-  main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;padding:16px 20px;align-items:start}
+  /* 한 줄 배치 (2026-10): 위에 검출기 칸, 맨 아래에 알림 및 진단. */
+  main{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:16px 20px;align-items:start}
   main > div{min-width:0}
   section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;
           min-width:0;overflow:hidden}
   /* 긴 토큰 하나가 칸을 넓히지 못하게 한다 (고정 크기 규칙의 가로 방향). */
-  .card,.crop,.calib,#health,#fps,#log,.note,.cropmeta{overflow-wrap:anywhere;word-break:break-word}
+  .card,.crop,#health,#fps,#log,.note,.cropmeta{overflow-wrap:anywhere;word-break:break-word}
   h2{font-size:12px;margin:0 0 10px;color:var(--dim);font-weight:600;letter-spacing:.6px;text-transform:uppercase}
   /* 고정 크기 규칙 (2026-09-06): 설명 문구가 실시간으로 바뀌어도 레이아웃이
      움직이지 않도록, 글이 들어가는 모든 칸은 크기를 고정하고 넘치면 감춘다. */
@@ -46,25 +47,11 @@
   /* 여러 줄이 오더라도 칸 높이는 그대로. 넘치는 부분은 잘라낸다. */
   .card .m{font-size:11px;line-height:15px;color:var(--dim);white-space:pre-line;
            overflow:hidden;flex:1 1 auto;min-height:0}
+  .dim{color:var(--dim)}
   .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#31445e}
   .badge.ok{background:#1d4a3a;color:var(--ok)}
   .badge.warn{background:#4a3f1d;color:var(--warn)}
   .badge.bad{background:#4a1d1d;color:var(--bad)}
-  table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
-  th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line)}
-  th{color:var(--dim);font-weight:600}
-  td.dim,.dim{color:var(--dim)}
-  .tablewrap{height:320px;overflow:auto}
-  canvas#preview{width:100%;height:auto;background:#0c131c;border-radius:6px;
-                 border:1px solid var(--line);cursor:crosshair;display:block}
-  .calib{margin-top:8px;font-size:12px;line-height:16px;color:var(--dim);padding:6px 8px;
-         background:var(--panel2);border-radius:6px;height:56px;overflow:hidden}
-  .calib.ok{color:var(--ok)} .calib.warn{color:var(--warn)}
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;height:60px;
-         overflow-y:auto;align-content:flex-start}
-  .chip{font-size:11px;padding:4px 9px;border-radius:20px;background:var(--panel2);
-        border:1px solid var(--line);color:var(--dim);cursor:pointer}
-  .chip.on{border-color:var(--ok);color:var(--ok)}
   #log{height:280px;overflow:auto;font-size:12px;font-family:Consolas,monospace}
   .logline{padding:2px 0;border-bottom:1px solid #1f2c3d;color:var(--dim)}
   .logline.ok{color:var(--ok)} .logline.warn{color:var(--warn)}
@@ -74,12 +61,6 @@
           height:40px;overflow:hidden}
   .note{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.7}
   #fps{height:32px;overflow:hidden;line-height:16px}
-  #shareInfo{height:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  #buffMeta{display:inline-block;max-width:70%;overflow:hidden;white-space:nowrap;
-            text-overflow:ellipsis;vertical-align:bottom}
-  /* 버프 표: 칸 너비를 고정해 내용에 따라 열이 흔들리지 않게 한다. */
-  #buffTable{table-layout:fixed}
-  #buffTable td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* 영역별 가로 한 칸 배치 (2026-09-07).
 
      이전에는 위쪽에 판정값 카드가 모여 있고 아래쪽에 캡처 이미지가 따로 모여
@@ -149,7 +130,6 @@
   .cropmeta > span{overflow:hidden}
   .mono{font-family:Consolas,monospace;color:#8fa6c0}
   .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
-  @media (max-width:1100px){main{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -158,7 +138,6 @@
   <h1>Astra Web — 메이플스토리 화면 관측</h1>
   <div id="status" class="status">준비 중…</div>
   <div class="spacer"></div>
-  <label class="chk"><input type="checkbox" id="chkBuffs" checked> 전체 버프 목록</label>
   <button id="btnSound">소리 테스트</button>
   <button id="btnExport">기록 내보내기</button>
   <button id="btnStop" disabled>중지</button>
@@ -233,38 +212,6 @@
         좌표는 모두 1366×768 클라이언트 기준입니다. 좌표 옆 <code>frame#</code>은 그 칸이 그린
         프레임 번호이고, 뒤에 <code>(결과 frame#…)</code>이 붙으면 판정에 쓰인 프레임과
         다르다는 뜻입니다.
-      </div>
-    </section>
-
-    <section>
-      <h2>버프 목록 <span id="buffMeta" class="dim" style="text-transform:none;font-weight:400"></span></h2>
-      <div class="tablewrap">
-        <table id="buffTable">
-          <colgroup><col style="width:11%"><col style="width:37%"><col style="width:18%">
-                    <col style="width:16%"><col style="width:18%"></colgroup>
-          <thead><tr><th>분류 ID</th><th>버프 이름</th><th>잔여시간</th><th>화면 숫자</th><th>최근 판독</th></tr></thead>
-          <tbody id="buffBody"><tr><td colspan="5" class="dim">—</td></tr></tbody>
-        </table>
-      </div>
-      <div class="note">
-        미확인 숫자는 스택일 수 있어 사용자 확인 전에는 시간으로 단정하지 않습니다.
-        분 표시는 분 해상도의 관측값이며 초 단위 정확도가 아닙니다.
-        마지막 열은 <b>그 항목이 마지막으로 판독된 시점</b>입니다. 전체 버프는 항목별로 도착하므로
-        오래된 항목은 &lsquo;이전 판독&rsquo;으로 표시되며 최신값으로 쓰지 않습니다.
-      </div>
-    </section>
-  </div>
-
-  <div style="display:grid;gap:16px;min-width:0">
-    <section>
-      <h2>공유 화면 및 보정</h2>
-      <canvas id="preview" width="640" height="360"></canvas>
-      <div id="shareInfo" class="dim" style="font-size:11px;margin-top:6px">공유 전</div>
-      <div id="calib" class="calib">공유를 시작하면 게임 클라이언트 영역을 자동으로 찾습니다.</div>
-      <div id="calibList" class="chips"></div>
-      <div class="note">
-        자동 보정이 빗나가면 미리보기 위에서 게임 화면 영역을 드래그해 직접 지정하세요.
-        모든 ROI는 1366×768 클라이언트 기준이며, 지정한 영역이 그 크기로 리샘플링됩니다.
       </div>
     </section>
 

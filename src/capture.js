@@ -295,26 +295,6 @@
     return view;
   };
 
-  /* The calibrated client area drawn to a visible canvas, letterbox-free, so
-     detector overlays can be placed in 1366x768 coordinates. */
-  Capture.prototype.drawClient = function (canvasEl) {
-    if (!this.video || !this.rect || this.video.readyState < 2) return false;
-    var r = this.rect;
-    try {
-      canvasEl.getContext('2d').drawImage(this.video, r.x, r.y, r.w, r.h,
-        0, 0, canvasEl.width, canvasEl.height);
-    } catch (e) { return false; }
-    return true;
-  };
-
-  /* Preview for the calibration panel, drawn at the caller's size. */
-  Capture.prototype.drawPreview = function (canvasEl) {
-    if (!this.video || this.video.readyState < 2) return false;
-    var g = canvasEl.getContext('2d');
-    g.drawImage(this.video, 0, 0, canvasEl.width, canvasEl.height);
-    return true;
-  };
-
   Capture.CLIENT_W = CLIENT_W;
   Capture.CLIENT_H = CLIENT_H;
   root.Capture = Capture;

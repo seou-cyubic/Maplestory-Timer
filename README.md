@@ -39,7 +39,7 @@ Chrome の画面共有でメイプルストーリーのゲーム画面を**見�
 
 #### 2. 役割別ワーカーと判定の分離 — `src/worker.js`, `src/main.js`
 
-- 経験値・HUD・バフ一覧・マップ名の解析を役割ごとの Web Worker に分け、重い処理がほかの判定を止めないようにしています。
+- 経験値・HUD・マップ名の解析を役割ごとの Web Worker に分け、重い処理がほかの判定を止めないようにしています。
 - すべてのメッセージにセッション ID・キャリブレーション ID・フレーム ID を付け、共有をやり直したときの遅延結果や古いキャリブレーションの結果を確実に破棄します。
 - ワーカーの結果は**届いた瞬間に**状態機械へ反映し、`requestAnimationFrame` は描画だけを担当します。タブが隠れて描画が止まっても判定は続きます。
 
@@ -107,7 +107,7 @@ Double-click `Astra.cmd` (Python 3 required). It starts the local server and ope
 
 #### 2. Role-based workers, decisions separated from drawing — `src/worker.js`, `src/main.js`
 
-- Experience, HUD, full buff list and map-name analysis each run in their own Web Worker, so one slow pass never stalls the others.
+- Experience, HUD and map-name analysis each run in their own Web Worker, so one slow pass never stalls the others.
 - Every message carries a session ID, calibration ID and frame ID, so late results from a previous share or an outdated calibration are reliably discarded.
 - Worker results feed the state machines **the moment they arrive**; `requestAnimationFrame` only draws. When the tab is hidden and drawing stops, judging continues.
 
@@ -175,7 +175,7 @@ Chrome 화면 공유로 메이플스토리 게임 화면을 **보기만** 하면
 
 #### 2. 역할별 워커와 판정·렌더링 분리 — `src/worker.js`, `src/main.js`
 
-- 경험치·HUD·전체 버프·사냥터 이름 분석을 역할별 Web Worker로 나눠, 무거운 처리가 다른 판정을 멈추지 않게 했습니다.
+- 경험치·HUD·사냥터 이름 분석을 역할별 Web Worker로 나눠, 무거운 처리가 다른 판정을 멈추지 않게 했습니다.
 - 모든 메시지에 세션 ID·보정 ID·프레임 ID를 붙여, 공유를 다시 시작했을 때 뒤늦게 도착한 결과나 이전 보정의 결과를 확실히 버립니다.
 - 워커 결과는 **도착 즉시** 상태 기계에 반영하고, `requestAnimationFrame`은 그리기만 합니다. 탭이 가려져 렌더링이 멈춰도 판정은 계속됩니다.
 

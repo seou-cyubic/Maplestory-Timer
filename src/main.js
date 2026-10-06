@@ -20,9 +20,9 @@
   'use strict';
 
   var A = window.ASTRA;
-  var ROLES = ['exp', 'hud', 'buffs', 'map'];
-  var INTERVAL = { exp: 100, hud: 500, buffs: 2000, map: 1000 };
-  var FRESH = { exp: 3, hud: 3, buffs: 8, map: 8 };      // seconds
+  var ROLES = ['exp', 'hud', 'map'];
+  var INTERVAL = { exp: 100, hud: 500, map: 1000 };
+  var FRESH = { exp: 3, hud: 3, map: 8 };      // seconds
   var STALE_FRAME_SECONDS = 0.5;
   var TIMER_HIDDEN_BELOW = 5;
   var WEALTH_DISPLAY_SECONDS = 1800;     // user-confirmed P04 duration
@@ -82,7 +82,6 @@
       // lives inside wealthTimerUi.)
       booster: stickyPresence(2),
       boosterSyncedSighting: null,
-      buffItems: {},           // id -> {item, at}
       events: [], timeline: [],
       boosterLog: [],
       reportErrors: 0,
@@ -97,15 +96,15 @@
   function stickyPresence(missesToDrop) { return new A.display.StickyPresence(missesToDrop); }
 
   var workers = {};
-  var enabledRoles = { exp: true, hud: true, buffs: true, map: true };
+  var enabledRoles = { exp: true, hud: true, map: true };
 
   /* ---- DOM -------------------------------------------------------------- */
 
   var el = {};
-  ['status', 'shareInfo', 'calib', 'calibList', 'preview', 'expValue', 'expState', 'expRaw',
+  ['status', 'expValue', 'expState', 'expRaw',
    'wealthValue', 'wealthMeta', 'boosterValue', 'boosterMeta', 'runeValue', 'runeMeta',
-   'buffBody', 'buffMeta', 'log', 'health', 'btnShare', 'btnStop',
-   'btnSound', 'btnExport', 'chkBuffs', 'fps', 'boosterState', 'runeDurationLine',
+   'log', 'health', 'btnShare', 'btnStop',
+   'btnSound', 'btnExport', 'fps', 'boosterState', 'runeDurationLine',
    'cropExp', 'rectExp', 'infoExp', 'srcExp',
    'cropRune', 'rectRune', 'infoRune', 'srcRune',
    'cropWealth', 'rectWealth', 'infoWealth', 'srcWealth',
@@ -114,7 +113,7 @@
 
   var COLOR = {
     exp: '#4fd1e0', rune: '#f06ad0', wealth: '#f0c05a',
-    booster: '#5ad6a0', buffs: '#6aa9f0'
+    booster: '#5ad6a0'
   };
   var STATIC = A.regions.compute(A.Capture.CLIENT_W, A.Capture.CLIENT_H);
 
@@ -292,22 +291,11 @@
       else if (how === 'stopped') sess.boosterSyncedSighting = null;
       return;
     }
-    if (m.kind === 'buff') {
-      sess.buffItems[m.item.id + '@' + m.item.bbox.join(',')] = { item: m.item, at: now(), frame: m.frameId };
-      return;
-    }
   }
 
   function judge(sess, role, payload) {
     if (role === 'exp') return judgeExp(sess, payload);
     if (role === 'hud') return judgeHud(sess, payload);
-    if (role === 'buffs') {
-      sess.buffItems = {};
-      (payload.buffs || []).forEach(function (b) {
-        sess.buffItems[b.id + '@' + b.bbox.join(',')] = { item: b, at: now(), frame: payload.frame_id };
-      });
-      return;
-    }
   }
 
   function judgeExp(sess, payload) {
@@ -543,25 +531,15 @@
     var exp = fresh(sess, 'exp') ? sess.results.exp.experience : null;
     var hud = fresh(sess, 'hud') ? sess.results.hud : null;
     var map = fresh(sess, 'map') ? sess.results.map : null;
-    var buffList = Object.keys(sess.buffItems)
-      .map(function (k) { return sess.buffItems[k]; })
-      .filter(function (e) { return t - e.at < FRESH.buffs + 4; })
-      .sort(function (a, b) {
-        var A1 = a.item.bbox, B1 = b.item.bbox;
-        var ra = Math.floor(A1[1] / 12), rb = Math.floor(B1[1] / 12);
-        return ra !== rb ? ra - rb : A1[0] - B1[0];
-      });
-
     renderExperience(sess, exp, st);
     renderWealth(sess, hud, t);
     renderBooster(sess, hud, t);
     renderRune(sess, hud, t);
     renderMapName(sess, map);
-    renderBuffs(sess, buffList, t);
     renderFps(sess);
     renderCrops(sess, exp, hud);
     renderHealth(sess);
-    recordTimeline(sess, st, exp, hud, buffList.length);
+    recordTimeline(sess, st, exp, hud);
   }
 
   function fresh(sess, role) {
@@ -760,30 +738,6 @@
       ' · 지속 ' + sess.runeDurUi.state(t) + ' · 쿨타임 ' + sess.runeCoolUi.state(t);
   }
 
-  function renderBuffs(sess, buffList, t) {
-    var latest = sess.results.buffs;
-    el.buffMeta.textContent = buffList.length
-      ? buffList.length + '개 · 항목별 갱신 (최근 전체 ' +
-        (latest ? fmt(t - latest.stamp, 1) + '초 전' : '진행 중') + ')'
-      : (enabledRoles.buffs ? '판독 불가' : '비활성');
-    var rows = buffList.map(function (e) {
-      var b = e.item, display;
-      if (b.remaining_seconds === null) {
-        display = b.time_mode === 'stack' ? '스택 — 시간 아님'
-          : b.reject_reason ? '보류 (' + b.reject_reason + ')' : '표시 없음 / 미확인';
-      } else {
-        display = b.resolution_seconds === 60 ? Math.floor(b.remaining_seconds / 60) + '분'
-          : clock(b.remaining_seconds);
-      }
-      var age = t - e.at;
-      return '<tr><td>' + esc(b.id) + '</td><td>' + esc(b.name || '이름 미확인') + '</td><td>' +
-        esc(display) + '</td><td>' + esc(b.raw_number || '—') + '</td><td>' +
-        (age > FRESH.buffs ? '<span class="dim">이전 판독 ' + fmt(age, 1) + '초</span>'
-          : fmt(age, 1) + '초 전') + '</td></tr>';
-    }).join('');
-    el.buffBody.innerHTML = rows || '<tr><td colspan="5" class="dim">—</td></tr>';
-  }
-
   function renderFps(sess) {
     // §6.4: numerator and denominator both belong to this session.
     var elapsed = (performance.now() - sess.startedAt) / 1000;
@@ -852,7 +806,7 @@
     el.health.textContent = parts.join('  |  ');
   }
 
-  function recordTimeline(sess, st, exp, hud, buffCount) {
+  function recordTimeline(sess, st, exp, hud) {
     try {
       var last = sess.timeline[sess.timeline.length - 1];
       var t = Math.round(now() * 10) / 10;
@@ -863,7 +817,6 @@
         exp_score: exp ? exp.score : null,
         exp_reject: exp ? exp.reject_reason : null,
         exp_activity: sess.activity.status,
-        buff_count: buffCount || null,
         vis: hud ? hud.buff_visibility : null,
         wealth_life: { status: sess.wealthLife.status, reason: sess.wealthLife.reason },
         booster_ui: hud && hud.booster_ui ? hud.booster_ui.presence : null,
@@ -894,15 +847,22 @@
     return sess && sess.ready.exp && sess.ready.hud;
   }
 
+  /* 보정 상태는 알림 및 진단 로그로 보낸다 (보정 패널은 2026-10 사용자
+     요청으로 화면에서 뺐다). 같은 문구가 연달아 찍히지 않게 한다. */
+  var lastCalibNote = null;
+  function calibNote(text, kind) {
+    if (text === lastCalibNote) return;
+    lastCalibNote = text;
+    logLine(text, kind || '');
+  }
+
   function startCalibration(sess) {
     candidates = capture.candidates();
     candidateIndex = 0;
     candidateScores = candidates.map(function () { return { score: 0, notes: [], raw: null }; });
     calibrating = true;
     calibStartedFor = -1;
-    el.calib.textContent = '워커 준비를 기다리는 중… (준비 전에는 후보를 평가하지 않습니다)';
-    el.calib.className = 'calib';
-    renderCandidates();
+    calibNote('보정: 워커 준비를 기다리는 중… (준비 전에는 후보를 평가하지 않습니다)');
   }
 
   function applyCandidate(sess) {
@@ -911,9 +871,8 @@
     bumpCalibration(sess, '후보 ' + (candidateIndex + 1));
     probeUntil = performance.now() + CANDIDATE_PROBE_MS;
     calibStartedFor = sess.calibrationId;
-    el.calib.textContent = '보정 후보 ' + (candidateIndex + 1) + '/' + candidates.length +
-      ': ' + (c.why || '수동') + '  [' + c.x + ',' + c.y + ' ' + c.w + 'x' + c.h + ']';
-    el.calib.className = 'calib';
+    calibNote('보정 후보 ' + (candidateIndex + 1) + '/' + candidates.length +
+      ': ' + (c.why || '수동') + '  [' + c.x + ',' + c.y + ' ' + c.w + 'x' + c.h + ']');
   }
 
   /* §5.2: a region change invalidates every locked ROI and every presence /
@@ -922,7 +881,6 @@
     sess.calibrationId += 1;
     sess.results = {};
     sess.partials = {};
-    sess.buffItems = {};
     sess.processed = {};
     sess.runeGate.reset();
     sess.wealthLife.reset();
@@ -974,12 +932,8 @@
     }
     if (ev.ok) {
       calibrating = false;
-      el.calib.textContent = '보정 완료 — 경험치 전체 문자열 확인: ' + ev.raw +
-        ' · HUD 근거: ' + ev.notes.join('+');
-      el.calib.className = 'calib ok';
-      logLine('보정 완료 #' + sess.calibrationId + ': ' + JSON.stringify(capture.getRect()) +
-        ' · 근거 ' + ev.notes.join('+'), 'ok');
-      renderCandidates();
+      calibNote('보정 완료 #' + sess.calibrationId + ' — 경험치 ' + ev.raw +
+        ' · HUD 근거 ' + ev.notes.join('+') + ' · ' + JSON.stringify(capture.getRect()), 'ok');
       return;
     }
     if (performance.now() > probeUntil) {
@@ -997,100 +951,17 @@
           candidateIndex = bestIdx;
           capture.setRect(candidates[bestIdx]);
           bumpCalibration(sess, '차선 후보 채택');
-          el.calib.textContent = '자동 보정 차선 채택 — ' + (candidates[bestIdx].why || '후보 ' + (bestIdx + 1)) +
+          calibNote('자동 보정 차선 채택 — ' + (candidates[bestIdx].why || '후보 ' + (bestIdx + 1)) +
             ' (근거 ' + (candidateScores[bestIdx].notes.join('+') || '없음') +
             ', 경험치 확정 실패' + (candidateScores[bestIdx].raw ? ' · 최고 후보 "' + candidateScores[bestIdx].raw + '"' : '') +
-            '). 빗나갔으면 아래 후보를 고르거나 미리보기에서 드래그하세요.';
-          el.calib.className = 'calib warn';
-          logLine('자동 보정 차선 채택: ' + JSON.stringify(candidates[bestIdx]) +
-            ' · 점수 ' + bestScore, 'warn');
+            ', 점수 ' + bestScore + ')', 'warn');
         } else {
-          el.calib.textContent = '자동 보정 실패 — 아래 후보를 직접 고르거나 미리보기에서 게임 화면 영역을 드래그하세요.';
-          el.calib.className = 'calib warn';
+          calibNote('자동 보정 실패 — 게임 창 전체가 공유됐는지 확인한 뒤 공유를 다시 시작하세요.', 'bad');
         }
-        renderCandidates();
         return;
       }
       applyCandidate(sess);
-      renderCandidates();
     }
-  }
-
-  function renderCandidates() {
-    el.calibList.innerHTML = '';
-    candidates.forEach(function (c, i) {
-      var b = document.createElement('button');
-      b.className = 'chip' + (i === candidateIndex ? ' on' : '');
-      b.textContent = (c.why || '수동') + ' · ' + c.w + '×' + c.h;
-      b.onclick = function () {
-        if (!S) return;
-        calibrating = false; candidateIndex = i; capture.setRect(c);
-        bumpCalibration(S, '수동 선택');
-        el.calib.textContent = '수동 선택: ' + (c.why || '수동');
-        el.calib.className = 'calib';
-        renderCandidates();
-      };
-      el.calibList.appendChild(b);
-    });
-  }
-
-  /* Drag on the preview to set the client rect by hand, clamped to the shared
-     surface (§5.2). */
-  function bindPreviewDrag() {
-    var origin = null;
-    el.preview.addEventListener('mousedown', function (e) {
-      var r = el.preview.getBoundingClientRect();
-      origin = [e.clientX - r.left, e.clientY - r.top];
-    });
-    window.addEventListener('mouseup', function (e) {
-      if (!origin) return;
-      var start = origin;
-      origin = null;
-      var s = capture.surfaceSize();
-      if (!s.w || !s.h || !S) return;
-      var r = el.preview.getBoundingClientRect();
-      var x2 = e.clientX - r.left, y2 = e.clientY - r.top;
-      // preview CSS pixels -> preview canvas pixels -> shared-surface pixels
-      var kx = (el.preview.width / r.width) * (s.w / el.preview.width);
-      var ky = (el.preview.height / r.height) * (s.h / el.preview.height);
-      var rect = {
-        x: Math.round(Math.min(start[0], x2) * kx),
-        y: Math.round(Math.min(start[1], y2) * ky),
-        w: Math.round(Math.abs(x2 - start[0]) * kx),
-        h: Math.round(Math.abs(y2 - start[1]) * ky),
-        why: '수동 드래그'
-      };
-      // Clamp inside the shared surface.
-      rect.x = Math.max(0, Math.min(s.w - 1, rect.x));
-      rect.y = Math.max(0, Math.min(s.h - 1, rect.y));
-      rect.w = Math.max(0, Math.min(s.w - rect.x, rect.w));
-      rect.h = Math.max(0, Math.min(s.h - rect.y, rect.h));
-      if (rect.w < 100 || rect.h < 60) return;
-      calibrating = false;
-      capture.setRect(rect);
-      bumpCalibration(S, '수동 드래그');
-      candidates = [rect].concat(candidates);
-      candidateIndex = 0;
-      el.calib.textContent = '수동 지정: ' + rect.w + '×' + rect.h +
-        ' [' + rect.x + ',' + rect.y + ']';
-      el.calib.className = 'calib';
-      renderCandidates();
-    });
-  }
-
-  function previewLoop() {
-    if (capture.video) {
-      capture.drawPreview(el.preview);
-      var r = capture.getRect(), s = capture.surfaceSize();
-      if (r && s.w) {
-        var g = el.preview.getContext('2d');
-        g.strokeStyle = '#5ad6a0'; g.lineWidth = 2;
-        g.strokeRect(r.x / s.w * el.preview.width, r.y / s.h * el.preview.height,
-                     r.w / s.w * el.preview.width, r.h / s.h * el.preview.height);
-      }
-    }
-    calibrationWatch();
-    setTimeout(previewLoop, 200);
   }
 
   /* ---- controls --------------------------------------------------------- */
@@ -1132,8 +1003,8 @@
       S = sess;
       sess.running = true;
       var s = capture.surfaceSize();
-      el.shareInfo.textContent = '공유 대상: ' + (capture.label || '(이름 없음)') + ' · ' + s.w + '×' + s.h;
-      logLine('세션 시작 ' + sess.id + ' · 표면 ' + s.w + '×' + s.h, 'ok');
+      logLine('세션 시작 ' + sess.id + ' · 공유 대상 ' + (capture.label || '(이름 없음)') +
+        ' · 표면 ' + s.w + '×' + s.h, 'ok');
       capture.onended = function () {
         if (!S || S !== sess) return;
         logLine('브라우저에서 공유가 중단되었습니다.', 'warn');
@@ -1190,10 +1061,8 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
   };
 
-  el.chkBuffs.onchange = function () { enabledRoles.buffs = el.chkBuffs.checked; };
-
-  bindPreviewDrag();
-  previewLoop();
+  /* 보정 판정은 화면과 무관하게 0.2초마다 돈다. */
+  setInterval(calibrationWatch, 200);
   if (!rafHandle) rafHandle = requestAnimationFrame(renderLoop);
   syncControls();
   setStatus('“화면 공유 시작”을 누른 뒤 MapleStory 창을 선택하세요.');
@@ -1211,8 +1080,6 @@
       capture.setRect(rect);
       calibrating = false;
       bumpCalibration(S, '진단 지정');
-      el.calib.textContent = '진단 지정: ' + JSON.stringify(rect);
-      el.calib.className = 'calib';
       return capture.getRect();
     },
     /* Full-resolution grab of the shared surface, for working out where the
