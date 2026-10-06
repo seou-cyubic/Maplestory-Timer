@@ -1,6 +1,6 @@
 /* Search areas for every detector, derived with the same expressions the
    analysis code uses so the UI can never drift from what is actually scanned,
-   plus the per-detector crop plan the five preview panels render.
+   plus the per-detector crop plan the four preview panels render.
    Pure geometry and text — no DOM, no canvas — so it is directly testable. */
 (function (root) {
   'use strict';
@@ -18,8 +18,6 @@
     var half = trunc(w * 0.5);
     var expX1 = trunc(w * 0.435), expX2 = trunc(w * 0.574), expY = h - 12;
     var boosterX = trunc(w * 0.25), boosterX2 = trunc(w * 0.75);
-    var lieX = trunc(w * 0.12), lieX2 = trunc(w * 0.88);
-    var lieY = trunc(h * 0.04), lieY2 = trunc(h * 0.82);
 
     return {
       client: [0, 0, w, h],
@@ -47,23 +45,8 @@
         rect: [boosterX, 0, boosterX2 - boosterX, Math.min(250, h)],
         label: '부스터 “남은시간” 앵커 탐색 범위',
         source: 'detectors.js BoosterDetector — w*0.25~0.75, 상단 250px, 정합 ≥0.78 (숫자 판독 없음)'
-      },
-      lie_features: {
-        rect: [0, 0, w, h],
-        label: '탐지기 특징 탐색 (전체 프레임)',
-        source: 'detectors.js LieDetector — SIFT 또는 다중 스케일 템플릿'
-      },
-      lie_ocr: {
-        rect: [lieX, lieY, lieX2 - lieX, lieY2 - lieY],
-        label: '탐지기 안내문 OCR 범위',
-        source: 'detectors.js LieDetector — 중앙 영역, 800px 폭으로 리샘플 후 인식'
       }
     };
-  }
-
-  function pad(rect, n, w, h) {
-    var x = Math.max(0, rect[0] - n), y = Math.max(0, rect[1] - n);
-    return [x, y, Math.min(w - x, rect[2] + 2 * n), Math.min(h - y, rect[3] + 2 * n)];
   }
 
   /* The rectangle each detector actually read this frame.
@@ -72,12 +55,10 @@
        `locked` - is this rectangle being reused from a previous frame?
        `src`    - where did the rectangle come from originally?
      A prior stays a prior after it has been stored and reused. */
-  function cropPlan(statics, exp, hud, lie, nowSeconds) {
-    var w = statics.client[2], h = statics.client[3];
+  function cropPlan(statics, exp, hud) {
     var rune = hud && hud.rune, wealth = hud && hud.wealth;
     var boosterUi = hud && hud.booster_ui;
     var runeDur = hud && hud.rune_duration;
-    var ld = lie && lie.lie_detector;
     var plans = {};
 
     var expSrc = exp && exp.roi_source;
@@ -209,31 +190,8 @@
       if (runeDur.bbox) plans.booster.sub.push({ rect: runeDur.bbox, owner: 'rune' });
     }
 
-    var ev = (ld && ld.evidence && ld.evidence.length) ? ld.evidence[0] : null;
-    var box = (ld && ld.candidate_bbox) || (ev && ev.bbox) || null;
-    if (box) {
-      plans.lie = {
-        rect: pad(box, 24, w, h), locked: true,
-        src: '후보 위치: ' + (ev ? ev.type : '—'),
-        sub: (ld.evidence || []).filter(function (e) { return e.bbox; })
-          .map(function (e) { return { rect: e.bbox, owner: 'lie' }; }),
-        info: (ld.present ? '등장 · ' : '약한 근거 · ') + (ld.reason || '') +
-          (ev && ev.score !== undefined ? ' ' + fmt(ev.score, 3) : '') +
-          (ev && ev.inliers !== undefined ? ' inliers ' + ev.inliers : '')
-      };
-    } else {
-      plans.lie = {
-        rect: statics.lie_ocr.rect, locked: false, sub: [],
-        src: ld ? '미등장 — 안내문 OCR 범위' : '안내문 OCR 범위',
-        info: ld
-          ? (ld.status === 'observed' ? '없음' : '관측 불가') + ' · ' + (ld.reason || '') +
-            ' · ' + (ld.matcher || '') +
-            (nowSeconds !== undefined && lie ? ' · 결과 나이 ' + fmt(nowSeconds - lie.stamp, 1) + '초' : '')
-          : '대기'
-      };
-    }
     return plans;
   }
 
-  root.regions = { compute: compute, cropPlan: cropPlan, pad: pad };
+  root.regions = { compute: compute, cropPlan: cropPlan };
 })(typeof self !== 'undefined' ? (self.ASTRA = self.ASTRA || {}) : (this.ASTRA = this.ASTRA || {}));

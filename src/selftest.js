@@ -189,7 +189,6 @@
         '어긋난 템플릿 0종');
 
       runeReader = new V.RuneDurationReader(classifier);
-      measure('탐지기 매칭 방식', typeof cv.SIFT === 'function' ? 'SIFT' : '템플릿 대체');
 
       note('§4.4 룬 지속시간 버프 — 사용자 확인 아이콘 U13(밝은 파랑) / U19(짙은 파랑)');
       var runeItems = runeReader.items().map(function (i) { return i.id; }).sort();
@@ -491,7 +490,7 @@
           minimap_bbox: mm, buff_visibility: V.buffVisibility(img), frame_valid: true,
           rune: runeObs, wealth: wealth, booster_ui: boosterObs, rune_duration: runeDur
         };
-        var plans = ASTRA.regions.cropPlan(statics, expResult, hud, null, 0);
+        var plans = ASTRA.regions.cropPlan(statics, expResult, hud);
         function shows(key) { return plans[key].rect.join(', '); }
 
         // First search on this image: the rectangle came from the pixels
@@ -505,7 +504,7 @@
 
         // The replaced legacy contract: a first prior read is not "locked".
         return V.detectExp(img, ocr).then(function (priorExp) {
-          var priorPlan = ASTRA.regions.cropPlan(statics, priorExp, hud, null, 0);
+          var priorPlan = ASTRA.regions.cropPlan(statics, priorExp, hud);
           row('크롭: prior로 읽은 경험치는 고정(locked)이 아니고 출처가 prior로 남음',
             priorPlan.exp.locked === false && priorPlan.exp.src.indexOf('prior') !== -1 &&
             priorPlan.exp.rect.join(', ') === priorExp.bbox.join(', '),
@@ -530,7 +529,7 @@
             rune_cooldown: { present: true, remaining_seconds: 659, raw: '10',
                              match_score: 0.9997, bbox: [1108, 41, 32, 32] }
           };
-          var coolPlan = ASTRA.regions.cropPlan(statics, expResult, coolHud, null, 0);
+          var coolPlan = ASTRA.regions.cropPlan(statics, expResult, coolHud);
           row('크롭: 발동 중이 아니고 쿨타임이면 쿨타임 아이콘을 보여준다',
             coolPlan.rune.locked && coolPlan.rune.rect.join(', ') === '1108, 41, 32, 32',
             coolPlan.rune.rect.join(', ') + ' · ' + coolPlan.rune.src,
@@ -542,7 +541,7 @@
             rune_duration: { iconPresence: 'ABSENT', bbox: null, observedSeconds: null },
             rune_cooldown: { present: false, bbox: null }
           };
-          var idlePlan = ASTRA.regions.cropPlan(statics, expResult, idleHud, null, 0);
+          var idlePlan = ASTRA.regions.cropPlan(statics, expResult, idleHud);
           row('크롭: 둘 다 없으면 미니맵으로 되돌아온다 (룬 표식을 찾는 범위)',
             idlePlan.rune.locked && idlePlan.rune.rect.join(', ') === mm.join(', ') &&
             idlePlan.rune.sub.length === 1,
@@ -564,18 +563,15 @@
             shows('booster') + ' · 하위 ' + plans.booster.sub.length + '개 · ' +
               plans.booster.info.slice(0, 48),
             boosterObs.bbox.join(', ') + ' · 하위 ≥1 · 숫자 판독 안 함');
-          row('크롭: 탐지기 = 미등장이라 탐색 범위로 대체',
-            plans.lie.locked === false && shows('lie') === statics.lie_ocr.rect.join(', '),
-            shows('lie') + ' · ' + plans.lie.src, statics.lie_ocr.rect.join(', ') + ' · 탐색 범위');
 
-          var idle = ASTRA.regions.cropPlan(statics, null, null, null, 0);
+          var idle = ASTRA.regions.cropPlan(statics, null, null);
           row('크롭: HUD 없음이면 전부 탐색 범위',
-            !idle.rune.locked && !idle.wealth.locked && !idle.booster.locked && !idle.lie.locked &&
+            !idle.rune.locked && !idle.wealth.locked && !idle.booster.locked &&
             idle.rune.rect.join(',') === statics.minimap_search.rect.join(',') &&
             idle.wealth.rect.join(',') === statics.buff_search.rect.join(',') &&
             idle.booster.rect.join(',') === statics.booster_search.rect.join(','),
-            [idle.rune, idle.wealth, idle.booster, idle.lie].map(function (p) { return p.locked; }).join('/'),
-            'false/false/false/false');
+            [idle.rune, idle.wealth, idle.booster].map(function (p) { return p.locked; }).join('/'),
+            'false/false/false');
 
           note('§4.4 룬 지속시간 실판독 — 실제 아이콘 크롭 및 실화면');
           return runeIconTests(img);
@@ -712,7 +708,6 @@
             d !== null && d > 6, '변화량 ' + d, '> 6');
           measure('두 실화면의 경험치 영역 변화량', String(d));
           m3.delete();
-          return lieTests(img);
         });
         });
       });
@@ -878,79 +873,6 @@
           });
         });
       });
-    }
-
-    /* §6.3: the popup must not be raised on ordinary combat scenery, and a
-       full-width strip at the top of the frame is never evidence. */
-    function lieTests(liveImg) {
-      note('§6.3 거짓말 탐지기 — 구조 검증');
-      var korean = null;
-      return ASTRA.OcrEngine.create('models/rec_korean.onnx', 'models/rec_korean.charset.json', 'korean')
-        .then(function (e) {
-          korean = e;
-          var det = new ASTRA.detectors.LieDetector(korean, { ocrEveryN: 1 });
-          return det.load('').then(function () { return det; });
-        }).then(function (det) {
-          row('탐지기 참조 자산 7종 로드', det.references.length === 7 && !det.loadError,
-            det.references.length + '종 · ' + (det.loadError || 'ok'), '7종 · ok');
-          var t = performance.now();
-          return det.observe(liveImg).then(function (r) {
-            var ms = performance.now() - t;
-            measure('탐지기 1회 분석 시간 (실사냥 화면, OCR 폴백 포함)', Math.round(ms) + 'ms');
-            row('[실화면] 일반 전투 화면을 탐지기로 오인하지 않음',
-              r.present === false && r.status === 'observed',
-              r.present + ' · ' + r.reason +
-                (r.weak_evidence && r.weak_evidence.length ? ' · 약한근거 ' + r.weak_evidence.length : ''),
-              'false');
-
-            // Title-bar band: paste a thin full-width strip at y=0 and confirm
-            // it is dropped rather than treated as instruction evidence.
-            var withBar = titleBarProbe(liveImg, det);
-            return withBar.then(function (r2) {
-              row('[합성] 상단 전폭 띠는 근거에서 제외됨',
-                r2.present === false,
-                r2.present + ' · 제외 ' + ((r2.dropped || []).length) + '건 · ' + r2.reason, 'false');
-              return det;
-            });
-          });
-        }).then(function (det) {
-          note('[실화면] 탐지기 양성 표본 (참조 자산 자기참조 — 강한 근거 아님)');
-          return loadMat('assets/lie_detector/video_frame_0.png').then(function (m) {
-            return det.observe(m).then(function (r) {
-              row('[실화면·자기참조] 실제 탐지기 프레임은 등장으로 판정 (동일 참조 2영역 배치)',
-                r.present === true && r.reason === 'A_same_reference_geometry',
-                r.present + ' · ' + r.reason, 'true · A_same_reference_geometry');
-              m.delete();
-              // A popup whose only registered region is one strong template has
-              // to survive on the instruction-text route. Losing this would be
-              // exactly the "raise the threshold and lose positives" failure
-              // §6.3 warns about, so it is asserted rather than assumed.
-              return loadMat('assets/lie_detector/user_type_3.webp');
-            });
-          }).then(function (m) {
-            return det.observe(m).then(function (r) {
-              row('[실화면·자기참조] 단일 영역 팝업도 안내문 경로로 등장 판정',
-                r.present === true, r.present + ' · ' + r.reason, 'true');
-              m.delete();
-            });
-          });
-        });
-    }
-
-    function titleBarProbe(src, det) {
-      var c = new OffscreenCanvas(src.cols, src.rows);
-      var g = c.getContext('2d', { willReadFrequently: true });
-      var rgba = new cv.Mat();
-      cv.cvtColor(src, rgba, cv.COLOR_BGR2RGBA);
-      g.putImageData(new ImageData(new Uint8ClampedArray(rgba.data), src.cols, src.rows), 0, 0);
-      rgba.delete();
-      g.fillStyle = '#202020';
-      g.fillRect(0, 0, src.cols, 6);
-      g.fillStyle = '#d0d0d0';
-      g.font = '11px sans-serif';
-      g.fillText('MapleStory', 8, 5);
-      var edited = V.matFromImageData(g.getImageData(0, 0, src.cols, src.rows));
-      return det.observe(edited).then(function (r) { edited.delete(); return r; });
     }
 
     function noNumberProbe(src, bbox) {

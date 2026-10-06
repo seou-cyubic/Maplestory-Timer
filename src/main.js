@@ -20,9 +20,9 @@
   'use strict';
 
   var A = window.ASTRA;
-  var ROLES = ['exp', 'hud', 'buffs', 'lie'];
-  var INTERVAL = { exp: 100, hud: 500, buffs: 2000, lie: 1000 };
-  var FRESH = { exp: 3, hud: 3, buffs: 8, lie: 8 };      // seconds
+  var ROLES = ['exp', 'hud', 'buffs', 'map'];
+  var INTERVAL = { exp: 100, hud: 500, buffs: 2000, map: 1000 };
+  var FRESH = { exp: 3, hud: 3, buffs: 8, map: 8 };      // seconds
   var STALE_FRAME_SECONDS = 0.5;
   var TIMER_HIDDEN_BELOW = 5;
   var WEALTH_DISPLAY_SECONDS = 1800;     // user-confirmed P04 duration
@@ -55,10 +55,9 @@
       partials: {},            // role -> latest partial
       ready: {}, stage: {}, workerError: {}, fatal: {},
       processed: {},           // role -> last processed frame id
-      exp: new A.state.ExperienceState(),
       // 정체 알림의 실제 주체. 숫자가 아니라 화면 변화를 본다.
       activity: new A.state.ExperienceActivity(),
-      gates: { rune: new A.state.PresenceGate(3), lie_detector: new A.state.PresenceGate(6) },
+      runeGate: new A.state.PresenceGate(3),
       wealthLife: new A.state.BuffExpiry(TIMER_HIDDEN_BELOW),
       wealthTimer: new A.state.TimerState('wealth'),
       boosterUi: new A.state.BoosterUiState(),
@@ -78,12 +77,11 @@
       runeCoolUi: new A.display.SkillTimer({
         seconds: RUNE_COOLDOWN_DISPLAY_SECONDS, resolution: 60
       }),
-      // Sticky presence for the presentation countdowns: a single missed
-      // detection frame must not restart a 30-minute readout.
+      // Sticky presence for the booster countdown: a single missed detection
+      // frame must not restart the readout. (The potion's sticky presence
+      // lives inside wealthTimerUi.)
       booster: stickyPresence(2),
-      wealth: stickyPresence(2),
       boosterSyncedSighting: null,
-      liePosition: null,
       buffItems: {},           // id -> {item, at}
       events: [], timeline: [],
       boosterLog: [],
@@ -99,25 +97,24 @@
   function stickyPresence(missesToDrop) { return new A.display.StickyPresence(missesToDrop); }
 
   var workers = {};
-  var enabledRoles = { exp: true, hud: true, buffs: true, lie: true };
+  var enabledRoles = { exp: true, hud: true, buffs: true, map: true };
 
   /* ---- DOM -------------------------------------------------------------- */
 
   var el = {};
   ['status', 'shareInfo', 'calib', 'calibList', 'preview', 'expValue', 'expState', 'expRaw',
    'wealthValue', 'wealthMeta', 'boosterValue', 'boosterMeta', 'runeValue', 'runeMeta',
-   'lieValue', 'lieMeta', 'buffBody', 'buffMeta', 'log', 'health', 'btnShare', 'btnStop',
-   'btnSound', 'btnExport', 'chkBuffs', 'chkLie', 'fps', 'boosterState', 'runeDurationLine',
+   'buffBody', 'buffMeta', 'log', 'health', 'btnShare', 'btnStop',
+   'btnSound', 'btnExport', 'chkBuffs', 'fps', 'boosterState', 'runeDurationLine',
    'cropExp', 'rectExp', 'infoExp', 'srcExp',
    'cropRune', 'rectRune', 'infoRune', 'srcRune',
    'cropWealth', 'rectWealth', 'infoWealth', 'srcWealth',
-   'cropBooster', 'rectBooster', 'infoBooster', 'srcBooster',
-   'cropLie', 'rectLie', 'infoLie', 'srcLie', 'mapName'
+   'cropBooster', 'rectBooster', 'infoBooster', 'srcBooster', 'mapName'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
 
   var COLOR = {
     exp: '#4fd1e0', rune: '#f06ad0', wealth: '#f0c05a',
-    booster: '#5ad6a0', lie: '#f0864a', buffs: '#6aa9f0'
+    booster: '#5ad6a0', buffs: '#6aa9f0'
   };
   var STATIC = A.regions.compute(A.Capture.CLIENT_W, A.Capture.CLIENT_H);
 
@@ -188,8 +185,7 @@
                   ') — 부스터 소멸은 "종료 확인 불가"로 닫힙니다.', 'warn');
         }
       }
-      if (role === 'lie' && m.lie_load_error) logLine('탐지기 자산: ' + m.lie_load_error, 'warn');
-      logLine(role + ' 워커 준비 완료' + (m.matcher ? ' (탐지기 매칭: ' + m.matcher + ')' : ''), 'ok');
+      logLine(role + ' 워커 준비 완료', 'ok');
       return;
     }
     if (m.type === 'fatal') {
@@ -241,13 +237,13 @@
     if (!f) { w.postMessage({ type: 'wait', ms: 60 }); return; }
     sess.lastServed[role] = t;
     sess.lastGrabAt = t;
-    /* lie 워커는 미니맵을 스스로 찾지 않고 hud 가 잠근 것을 받아 쓴다
+    /* map 워커는 미니맵을 스스로 찾지 않고 hud 가 잠근 것을 받아 쓴다
        (워커마다 따로 찾으면 서로 다른 상자를 잡는다). */
     var hudRes = sess.results && sess.results.hud;
     w.postMessage({
       type: 'frame', bitmap: f.bitmap, frameId: f.frameId, stamp: f.stamp,
       sessionId: sess.id, calibrationId: sess.calibrationId, servedAt: t,
-      minimapRect: (role === 'lie' && hudRes) ? hudRes.minimap_bbox : null
+      minimapRect: (role === 'map' && hudRes) ? hudRes.minimap_bbox : null
     }, [f.bitmap]);
   }
 
@@ -305,7 +301,6 @@
   function judge(sess, role, payload) {
     if (role === 'exp') return judgeExp(sess, payload);
     if (role === 'hud') return judgeHud(sess, payload);
-    if (role === 'lie') return judgeLie(sess, payload);
     if (role === 'buffs') {
       sess.buffItems = {};
       (payload.buffs || []).forEach(function (b) {
@@ -346,8 +341,6 @@
         logLine('경험치 판독 보류: ' + exp.reject_reason + ' (raw "' + (exp.raw || '') + '")', 'warn');
       }
     } else if (value !== null) { sess._lastExpReject = null; }
-    // 값 추적은 화면 표시·기록용으로만 남긴다. 알림은 위의 활동 상태기계가 낸다.
-    sess.exp.update(value, payload.stamp);
   }
 
   function judgeHud(sess, payload) {
@@ -359,7 +352,7 @@
 
     /* --- rune marker on the minimap (unrelated to the booster rule) --- */
     var rune = payload.rune || {};
-    if (sess.gates.rune.update(rune.status === 'observed' ? rune.present : null, t)) {
+    if (sess.runeGate.update(rune.status === 'observed' ? rune.present : null, t)) {
       emit(sess, 'rune_appeared', {});
     }
 
@@ -388,17 +381,17 @@
     }
     // Absence only counts when the buff row was actually observable.
     var wealthSeen = wealth ? true : ((observable && payload.frame_valid) ? false : null);
-    var wealthOn = sess.wealth.update(wealthSeen);
 
-    /* 표시 타이머 세 개. 판정과는 완전히 분리돼 있다 — sess.wealth(위)는
-       알림 판정용 sticky 이고 그대로 둔다. 아래는 화면에 보여줄 숫자만
-       만든다.
+    /* 표시 타이머 세 개. 숫자는 화면에만 쓰이고 판정에 들어가지 않는다.
+       다만 비약 타이머가 들고 있는 sticky 존재(두 프레임까지의 결손 흡수)는
+       아래 BuffExpiry 판정에도 그대로 쓴다 — 같은 입력으로 같은 sticky 를
+       두 벌 들고 있을 이유가 없다.
 
        세 아이콘 모두 남은 시간이 5초 미만이면 게임이 숫자를 지운다. 그때는
        seconds 로 null 이 들어가고 타이머가 스스로 5·4·3·2·1 을 센 뒤,
        0에서도 아이콘이 남아 있으면 서버 지연 문구를 낸다
        (사용자 지시 2026-09-07, display.SkillTimer). */
-    sess.wealthTimerUi.update(
+    var wealthOn = sess.wealthTimerUi.update(
       wealthSeen,
       wealth ? wealth.remaining_seconds : null,
       now());
@@ -432,10 +425,9 @@
        (closed=true, 기억한 잔여 삭제) 그 뒤로는 영영 알림이 나오지 않는다.
        판독이 없으니 closed 를 풀 기회도 없다.
 
-       sess.wealth 는 stickyPresence(2) 라 두 프레임까지의 결손을 흡수한다.
-       화면 표시에는 이미 이 값을 쓰고 있었고, 판정만 날것을 쓰고 있었다. */
+       wealthOn 은 표시 타이머의 sticky 존재라 두 프레임까지의 결손을 흡수한다. */
     if (sess.wealthLife.update({
-      iconPresent: wealthOn === null ? (wealth !== null) : wealthOn,
+      iconPresent: wealthOn,
       remaining: wRemaining,
       now: t,
       observable: observable && payload.frame_valid
@@ -495,29 +487,6 @@
     logLine(text, kind);
   }
 
-  function judgeLie(sess, payload) {
-    if (sess.processed.lie === payload.frame_id) return;
-    sess.processed.lie = payload.frame_id;
-    var ld = payload.lie_detector || {};
-    // §6.3: consecutive confirmation must be about the same candidate position.
-    var box = ld.candidate_bbox || null;
-    var samePlace = true;
-    if (ld.present && box) {
-      if (sess.liePosition) {
-        samePlace = Math.abs(sess.liePosition[0] - box[0]) < 160 &&
-                    Math.abs(sess.liePosition[1] - box[1]) < 160;
-      }
-      if (!samePlace) sess.gates.lie_detector.reset();
-      sess.liePosition = box;
-    } else if (!ld.present) {
-      sess.liePosition = null;
-    }
-    var present = ld.status === 'observed' ? ld.present : null;
-    if (sess.gates.lie_detector.update(present, payload.stamp)) {
-      emit(sess, 'lie_detector_appeared', { reason: ld.reason, bbox: box });
-    }
-  }
-
   /* ---- diagnostics (§6.4) ----------------------------------------------- */
 
   function observerState(sess) {
@@ -568,12 +537,12 @@
     var sess = S;
     var st = observerState(sess);
     setStatus(st.text, st.css);
-    if (!sess) { renderCrops(null, null, null, null); return; }
+    if (!sess) { renderCrops(null, null, null); return; }
 
     var t = now();
     var exp = fresh(sess, 'exp') ? sess.results.exp.experience : null;
     var hud = fresh(sess, 'hud') ? sess.results.hud : null;
-    var lie = fresh(sess, 'lie') ? sess.results.lie : null;
+    var map = fresh(sess, 'map') ? sess.results.map : null;
     var buffList = Object.keys(sess.buffItems)
       .map(function (k) { return sess.buffItems[k]; })
       .filter(function (e) { return t - e.at < FRESH.buffs + 4; })
@@ -587,13 +556,12 @@
     renderWealth(sess, hud, t);
     renderBooster(sess, hud, t);
     renderRune(sess, hud, t);
-    renderMapName(sess, lie);
-    renderLie(sess, lie, t);
+    renderMapName(sess, map);
     renderBuffs(sess, buffList, t);
     renderFps(sess);
-    renderCrops(sess, exp, hud, lie);
+    renderCrops(sess, exp, hud);
     renderHealth(sess);
-    recordTimeline(sess, st, exp, hud, lie, buffList.length);
+    recordTimeline(sess, st, exp, hud, buffList.length);
   }
 
   function fresh(sess, role) {
@@ -732,9 +700,9 @@
     }
   }
 
-  function renderMapName(sess, lie) {
+  function renderMapName(sess, mapRes) {
     if (!el.mapName) return;
-    var m = lie ? lie.map_name : null;
+    var m = mapRes ? mapRes.map_name : null;
     /* 한 번 읽은 이름은 유지한다. 판독이 잠깐 실패했다고 화면에서 지우면
        사냥터가 바뀐 것처럼 보인다. 이름은 맵을 옮길 때만 바뀐다. */
     if (m && m.text) {
@@ -792,21 +760,6 @@
       ' · 지속 ' + sess.runeDurUi.state(t) + ' · 쿨타임 ' + sess.runeCoolUi.state(t);
   }
 
-  function renderLie(sess, lie, t) {
-    var ld = lie ? lie.lie_detector : null;
-    el.lieValue.textContent = !ld ? '대기'
-      : ld.status !== 'observed' ? '관측 불가'
-      : ld.present ? '등장' : '없음';
-    el.lieMeta.textContent = ld
-      ? (ld.reason || '—') +
-        (ld.evidence && ld.evidence.length
-          ? ' · ' + ld.evidence.map(function (e) { return e.method; }).join(', ') : '') +
-        (ld.weak_evidence && ld.weak_evidence.length ? ' · 약한근거 ' + ld.weak_evidence.length + '건' : '') +
-        (ld.dropped && ld.dropped.length ? ' · 제외 ' + ld.dropped.length + '건' : '') +
-        ' / 결과 나이 ' + fmt(t - lie.stamp, 1) + '초'
-      : '—';
-  }
-
   function renderBuffs(sess, buffList, t) {
     var latest = sess.results.buffs;
     el.buffMeta.textContent = buffList.length
@@ -850,12 +803,11 @@
     ['exp', 'cropExp', 'rectExp', 'infoExp', 'srcExp', 'exp'],
     ['rune', 'cropRune', 'rectRune', 'infoRune', 'srcRune', 'hud'],
     ['wealth', 'cropWealth', 'rectWealth', 'infoWealth', 'srcWealth', 'hud'],
-    ['booster', 'cropBooster', 'rectBooster', 'infoBooster', 'srcBooster', 'hud'],
-    ['lie', 'cropLie', 'rectLie', 'infoLie', 'srcLie', 'lie']
+    ['booster', 'cropBooster', 'rectBooster', 'infoBooster', 'srcBooster', 'hud']
   ];
 
-  function renderCrops(sess, exp, hud, lie) {
-    var plans = A.regions.cropPlan(STATIC, exp, hud, lie, now());
+  function renderCrops(sess, exp, hud) {
+    var plans = A.regions.cropPlan(STATIC, exp, hud);
     CROPS.forEach(function (c) {
       var plan = plans[c[0]];
       var canvas = el[c[1]];
@@ -900,7 +852,7 @@
     el.health.textContent = parts.join('  |  ');
   }
 
-  function recordTimeline(sess, st, exp, hud, lie, buffCount) {
+  function recordTimeline(sess, st, exp, hud, buffCount) {
     try {
       var last = sess.timeline[sess.timeline.length - 1];
       var t = Math.round(now() * 10) / 10;
@@ -910,15 +862,14 @@
         exp: exp && exp.confirmed ? exp.value : null,
         exp_score: exp ? exp.score : null,
         exp_reject: exp ? exp.reject_reason : null,
-        state: sess.exp.status,
+        exp_activity: sess.activity.status,
         buff_count: buffCount || null,
         vis: hud ? hud.buff_visibility : null,
         wealth_life: { status: sess.wealthLife.status, reason: sess.wealthLife.reason },
         booster_ui: hud && hud.booster_ui ? hud.booster_ui.presence : null,
         booster_state: sess.boosterUi.state,
         rune_duration: hud ? hud.rune_duration : null,
-        rune: hud ? hud.rune : null,
-        lie: lie ? lie.lie_detector : null
+        rune: hud ? hud.rune : null
       });
       if (sess.timeline.length > 20000) sess.timeline.shift();
     } catch (e) {
@@ -973,17 +924,14 @@
     sess.partials = {};
     sess.buffItems = {};
     sess.processed = {};
-    sess.exp = new A.state.ExperienceState();
-    sess.gates.rune.reset();
-    sess.gates.lie_detector.reset();
-    sess.liePosition = null;
+    sess.runeGate.reset();
     sess.wealthLife.reset();
     sess.activity.reset();
     sess.wealthTimer.reset();
     armWealthTimer(sess);
     sess.boosterUi.interrupt('calibration_changed');
     sess.boosterDisplay.stop(); sess.booster.reset();
-    sess.wealthTimerUi.reset(); sess.wealth.reset();
+    sess.wealthTimerUi.reset();
     sess.runeDurUi.reset(); sess.runeCoolUi.reset();
     logLine('보정 변경 #' + sess.calibrationId + ' (' + why + ') — 잠금 ROI와 상태 초기화', 'warn');
   }
@@ -1243,7 +1191,6 @@
   };
 
   el.chkBuffs.onchange = function () { enabledRoles.buffs = el.chkBuffs.checked; };
-  el.chkLie.onchange = function () { enabledRoles.lie = el.chkLie.checked; };
 
   bindPreviewDrag();
   previewLoop();

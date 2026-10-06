@@ -4,14 +4,22 @@ Plain http.server lets the browser hold on to a cached copy of the app's
 scripts, so an edit does not show up on reload. Everything here is served
 with no-store; the ONNX models are the only thing worth caching and they
 never change, so they keep a long max-age.
+
+Started by Astra.cmd (double-click). It opens the observer page in the
+default browser by itself, and if an Astra server is already running on the
+port it just opens the page again instead of failing.
 """
 import argparse
 import functools
 import json
+import os
 import re
 import http.server
 import socketserver
 import sys
+import threading
+import urllib.request
+import webbrowser
 from pathlib import Path
 
 # 모델만 오래 캐시한다.
@@ -169,25 +177,70 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 class Server(socketserver.ThreadingTCPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    # On Windows SO_REUSEADDR lets a second server bind a port that is already
+    # in use, and the two then silently share it. Only reuse elsewhere.
+    allow_reuse_address = os.name != 'nt'
+
+
+PAGE_MARKER = b'Astra Web'
+PORT_TRIES = 10
+
+
+def astra_running(port):
+    """Is an Astra server already answering on this port?"""
+    try:
+        with urllib.request.urlopen(f'http://127.0.0.1:{port}/', timeout=0.5) as r:
+            return PAGE_MARKER in r.read(4096)
+    except Exception:
+        return False
+
+
+def open_page(url):
+    try:
+        webbrowser.open(url)
+    except Exception:
+        pass
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--port', type=int, default=8000)
     ap.add_argument('--root', default=str(Path(__file__).resolve().parent.parent))
+    ap.add_argument('--no-open', action='store_true', help='브라우저를 자동으로 열지 않는다')
     args = ap.parse_args()
 
     handler = functools.partial(Handler, directory=args.root)
-    with Server(('127.0.0.1', args.port), handler) as httpd:
-        print(f'  http://localhost:{args.port}/              관측 화면')
-        print(f'  http://localhost:{args.port}/selftest.html  이식 검증')
-        print('  종료: Ctrl+C', flush=True)
+    httpd = None
+    for port in range(args.port, args.port + PORT_TRIES):
+        if astra_running(port):
+            url = f'http://127.0.0.1:{port}/'
+            print(f'  이미 실행 중입니다: {url}')
+            if not args.no_open:
+                open_page(url)
+            return 0
+        try:
+            httpd = Server(('127.0.0.1', port), handler)
+            break
+        except OSError:
+            continue                    # 다른 프로그램이 쓰는 포트 - 다음 포트로
+    if httpd is None:
+        print(f'  포트 {args.port}~{args.port + PORT_TRIES - 1} 이 모두 사용 중입니다.', file=sys.stderr)
+        return 1
+
+    url = f'http://127.0.0.1:{port}/'
+    with httpd:
+        print('')
+        print('  Astra Web')
+        print(f'  {url}              관측 화면')
+        print(f'  {url}selftest.html  이식 검증')
+        print('  [화면 공유 시작] -> MapleStory 창 선택')
+        print('  종료: 이 창을 닫거나 Ctrl+C', flush=True)
+        if not args.no_open:
+            threading.Timer(0.3, open_page, args=(url,)).start()
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
             print('\n중지됨')
-            return 0
     return 0
 
 

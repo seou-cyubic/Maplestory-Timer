@@ -1,15 +1,13 @@
 /* Alert sounds. Replaces winsound.Beep with WebAudio.
 
-   Legacy behaviour: 1500 Hz x3 for the CAPTCHA, 1100 Hz x2 otherwise, each
-   beep 180 ms with a 120 ms gap, fired on a fresh daemon thread per event so
-   simultaneous events overlapped. Here the events go through a priority queue
-   instead, so a CAPTCHA alert is heard first and beeps never pile on top of
-   each other - DESIGN.md §6 asked for that and the Python build never did it. */
+   Legacy behaviour: 1100 Hz x2, each beep 180 ms with a 120 ms gap, fired on a
+   fresh daemon thread per event so simultaneous events overlapped. Here the
+   events go through a priority queue instead, so the most urgent alert is
+   heard first and beeps never pile on top of each other. */
 (function (root) {
   'use strict';
 
   var TONE = {
-    lie_detector_appeared: { freq: 1500, beeps: 3, priority: 0, label: '거짓말 탐지기 등장' },
     experience_stalled:    { freq: 1100, beeps: 2, priority: 1, label: '사냥 일시 정지' },
     rune_appeared:         { freq: 1250, beeps: 2, priority: 2, label: '룬 등장' },
     wealth_expired:        { freq: 900,  beeps: 2, priority: 3, label: '비약 종료' },

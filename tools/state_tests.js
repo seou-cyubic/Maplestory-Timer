@@ -409,49 +409,6 @@ section('§4.2  관측 게이트 (순수 함수)');
 }
 
 /* ------------------------------------------------------------------ */
-section('§8.1  경험치');
-
-{
-  const s = new S.ExperienceState();
-  let fired = 0;
-  for (let i = 0; i < 90; i++) if (s.update('100', i * 0.1)) fired++;
-  ok('정체 알림 1회', fired === 1, fired, '1');
-}
-{
-  // FIX-1. The gap must be longer than options.maxGapSeconds (2.0 s) so that
-  // it really does force a re-baseline - otherwise the test would pass without
-  // exercising the re-arm path at all.
-  const f = new S.ExperienceState();
-  let fired = 0;
-  for (let t = 0; t < 400; t++) {
-    if (t > 100 && t < 135) continue;          // 3.4 s capture gap
-    if (f.update('100', t * 0.1)) fired++;
-  }
-  ok('FIX-1 캡처 끊김(3.4초)이 알림을 재무장하지 않음', fired === 1, fired, '1');
-  ok('FIX-1 그 끊김이 실제로 재기준선을 유발했는지 확인',
-    S.options.maxGapSeconds < 3.4, S.options.maxGapSeconds + 's < 3.4s', 'true');
-}
-{
-  // FIX-7 (§3.7 / §6.1): 100 held to a stall, then a misread drops to 99 and
-  // holds. The 2026-09-05 build alerted twice (7.1 s and 16.1 s).
-  const s = new S.ExperienceState();
-  const at = [];
-  for (let t = 0; t <= 100; t++) if (s.update('100', t * 0.1)) at.push(+(t * 0.1).toFixed(1));
-  for (let t = 101; t <= 300; t++) if (s.update('99', t * 0.1)) at.push(+(t * 0.1).toFixed(1));
-  ok('FIX-7 정체 후 감소·오인식이 정체 알림을 재무장하지 않음',
-    at.length === 1, at.length + '회 @ ' + at.join(','), '1회');
-}
-{
-  // A real increase still re-arms.
-  const s = new S.ExperienceState();
-  const at = [];
-  for (let t = 0; t <= 100; t++) if (s.update('100', t * 0.1)) at.push('a');
-  s.update('101', 10.1); s.update('101', 10.2);
-  for (let t = 103; t <= 300; t++) if (s.update('101', t * 0.1)) at.push('b');
-  ok('실제 증가는 재무장한다 (2회)', at.length === 2, at.length + '회', '2회');
-}
-
-/* ------------------------------------------------------------------ */
 section('§8.1  비약 수명');
 
 {

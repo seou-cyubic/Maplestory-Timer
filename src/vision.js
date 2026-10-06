@@ -2213,8 +2213,18 @@
     return 'template_missing';
   };
 
-  /* Returns a RuneDurationObservation (§4.2). */
-  RuneDurationReader.prototype.observe = function (image, visibility, frameId) {
+  RuneDurationReader.prototype.ids = function () {
+    return this.items().map(function (it) { return it.id; });
+  };
+
+  /* Returns a RuneDurationObservation (§4.2).
+
+     `classified` (optional) is a classify() result the caller already has for
+     this frame. The hud pass classifies the rune icons together with the
+     potion and the rune cooldown in ONE pass, so the contour search and the
+     buff-row scan are not paid twice per frame. Without it the reader runs
+     its own pass, as before. */
+  RuneDurationReader.prototype.observe = function (image, visibility, frameId, classified) {
     var self_ = this;
     var base = {
       frameId: frameId === undefined ? null : frameId,
@@ -2231,9 +2241,11 @@
       base.reason = 'buff_row_' + visibility;
       return Promise.resolve(base);
     }
-    var usable = this.items();
-    var ids = usable.map(function (it) { return it.id; });
-    return this.classifier.classify(image, ids, { yieldEvery: 0 }).then(function (list) {
+    var ids = this.ids();
+    var found = classified
+      ? Promise.resolve(classified.filter(function (x) { return ids.indexOf(x.id) !== -1; }))
+      : this.classifier.classify(image, ids, { yieldEvery: 0 });
+    return found.then(function (list) {
       if (!list.length) {
         base.iconPresence = 'ABSENT';
         base.reason = 'rune_icon_absent';

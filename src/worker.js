@@ -6,7 +6,7 @@
      hud   - booster UI presence, rune duration, minimap/rune marker, the P04
              potion, buff-row visibility (0.5 s)
      buffs - the full buff grid (2 s), reported item by item
-     lie   - CAPTCHA presence (1 s)
+     map   - the hunting-ground name above the minimap (1 s)
    Frames are pulled, never pushed, so a busy worker always skips to the
    newest frame instead of draining a backlog of stale ones.
 
@@ -96,15 +96,14 @@ function bitmapToMat(bitmap) {
 
 /* ---- role setup ------------------------------------------------------- */
 
-var engines = {}, ocr = null, buffs = null, rune = null, booster = null, lie = null;
+var engines = {}, ocr = null, buffs = null, rune = null, booster = null;
 var runeDuration = null;
 var minimapLock = null;
-/* 맵 이름은 lie 워커가 읽는다.
+/* 맵 이름은 map 워커가 읽는다.
 
    왜 hud 가 아닌가: 한국어 인식 모델이 23 MB 인데 hud 는 부스터 존재 판정을
-   지연 없이 내보내야 하는 워커다. lie 워커는 이미 한국어 모델을 들고 있고
-   주기도 느리다(FRESH.lie = 8초). 맵 이름은 맵을 옮길 때만 바뀌므로 느린
-   주기로 충분하다. */
+   지연 없이 내보내야 하는 워커다. 맵 이름은 맵을 옮길 때만 바뀌므로 느린
+   주기의 별도 워커로 충분하다. */
 var mapNameState = { lock: null, text: null, region: null, fingerprint: null,
                      reads: 0, rect: null, table: null, confident: false };
 var atlas = null;
@@ -113,7 +112,7 @@ var atlas = null;
    gets its own sync. Display only - see detectors.js readNumber. */
 var boosterSync = { done: false, value: null, raw: null, reason: 'not_attempted' };
 var expLocator = null;
-var INTERVAL = { exp: 100, hud: 500, buffs: 2000, lie: 1000 };
+var INTERVAL = { exp: 100, hud: 500, buffs: 2000, map: 1000 };
 
 /* 경험치: 변화 감지가 본체, OCR은 화면 표시용 곁가지 (2026-09-06 memo).
    서명 비교는 몇 ms면 끝나므로 매 프레임 하고, OCR은 드물게만 한다. */
@@ -135,7 +134,7 @@ function init(msg) {
                   base + 'src/accumulate.js', base + 'src/detectors.js');
     post({ type: 'status', stage: 'models' });
     var need = [];
-    if (role !== 'lie') {
+    if (role !== 'map') {
       need.push(ASTRA.OcrEngine.create(base + 'models/rec_general.onnx', base + 'models/rec_general.charset.json', 'general')
         .then(function (e) { engines.general = e; }));
     }
@@ -143,14 +142,14 @@ function init(msg) {
       need.push(ASTRA.OcrEngine.create(base + 'models/rec_en.onnx', base + 'models/rec_en.charset.json', 'en')
         .then(function (e) { engines.en = e; }));
     }
-    if (role === 'lie') {
+    if (role === 'map') {
       need.push(ASTRA.OcrEngine.create(base + 'models/rec_korean.onnx', base + 'models/rec_korean.charset.json', 'korean')
         .then(function (e) { engines.korean = e; }));
     }
     return Promise.all(need);
   }).then(function () {
     post({ type: 'status', stage: 'assets' });
-    if (role !== 'lie') ocr = new ASTRA.vision.OCR(engines.general, engines.en || engines.general);
+    if (role !== 'map') ocr = new ASTRA.vision.OCR(engines.general, engines.en || engines.general);
     var after = [];
     /* 글꼴 아틀라스는 경험치와 버프 숫자가 함께 쓴다. 한 번만 읽는다. */
     var atlasReady = (role === 'exp' || role === 'hud' || role === 'buffs')
@@ -182,25 +181,21 @@ function init(msg) {
       booster = new ASTRA.detectors.BoosterDetector();
       after.push(rune.load(base), booster.load(base));
     }
-    if (role === 'lie') {
-      lie = new ASTRA.detectors.LieDetector(engines.korean);
-      after.push(lie.load(base));
-    }
     return Promise.all(after);
   }).then(function () {
     if (role === 'hud') {
       runeDuration = new ASTRA.vision.RuneDurationReader(buffs);
       minimapLock = new ASTRA.vision.MinimapLock(3);
     }
-    if (role === 'lie') {
+    if (role === 'map') {
       mapNameState.lock = new ASTRA.vision.MinimapLock(3);
       /* 이름표는 준비 조건이 아니다. 늦게 도착해도 그 전까지 OCR 추정으로
          버티므로 여기서 기다리지 않는다.
 
          **`after` 를 쓰면 안 된다** — 그 배열은 앞 단계 then 안의 지역 변수라
-         여기서는 없는 이름이다. 실제로 그렇게 썼다가 lie 워커가
-         "after is not defined" 로 초기화에 실패했고, 거짓말 탐지기와 사냥터
-         이름이 통째로 죽었다 (2026-09-07 실사용에서 발견). */
+         여기서는 없는 이름이다. 실제로 그렇게 썼다가 이 워커가
+         "after is not defined" 로 초기화에 실패했고, 사냥터 이름이 통째로
+         죽었다 (2026-09-07 실사용에서 발견). */
       fetch(base + 'config/maps.json').then(function (r) {
         return r.ok ? r.json() : null;
       }).then(function (doc) { mapNameState.table = doc || null; },
@@ -208,8 +203,6 @@ function init(msg) {
     }
     post({
       type: 'ready',
-      matcher: lie ? (lie.hasSift ? 'sift' : 'template') : null,
-      lie_load_error: lie ? lie.loadError : null,
       rune_duration_status: runeDuration ? runeDuration.status() : null,
       glyph_font: (role === 'exp' && expLocator && expLocator.font)
         ? expLocator.font.glyphs.map(function (g) { return g.ch; }).sort().join('') : null,
@@ -278,9 +271,9 @@ function readMapName(mat, stamp, sharedRect) {
   if (!engines.korean) { out.source = 'unavailable'; return out; }
   /* hud 워커가 이미 잠근 미니맵을 그대로 쓴다.
 
-     예전에는 lie 워커가 자기 잠금을 따로 들었는데, 두 워커가 각자 탐색하니
+     예전에는 이 워커가 자기 잠금을 따로 들었는데, 두 워커가 각자 탐색하니
      **서로 다른 상자를 잡는 일이 생겼다** (실사용 2026-09-07: hud 가
-     [0,58,212,131], lie 가 [8,69,171,...]). 하나만 옳을 수 있으므로 같은 것을
+     [0,58,212,131], 이 워커가 [8,69,171,...]). 하나만 옳을 수 있으므로 같은 것을
      써야 한다. hud 가 없으면 예전처럼 스스로 찾는다. */
   var box = sharedRect || null;
   if (!box) {
@@ -441,11 +434,8 @@ function analyse(mat, msg, meta) {
       }
     }).then(function (list) { return { buffs: list, buffs_rejected: list.rejected || [] }; });
   }
-  if (role === 'lie') {
-    var mapInfo = readMapName(mat, msg.stamp, msg.minimapRect || null);
-    return lie.observe(mat).then(function (r) {
-      return { lie_detector: r, map_name: mapInfo };
-    });
+  if (role === 'map') {
+    return Promise.resolve({ map_name: readMapName(mat, msg.stamp, msg.minimapRect || null) });
   }
 
   // hud
@@ -496,8 +486,7 @@ function analyse(mat, msg, meta) {
 
   // The rune duration is read on every hud frame so the reading that belongs
   // to a disappearance frame already exists when that frame turns out to be
-  // one (§4.3.3). While no rune-duration label is identified this returns
-  // UNKNOWN immediately and costs nothing.
+  // one (§4.3.3).
   return Promise.resolve().then(function () {
     // Sync read: at most once per sighting, and never on the fast presence path.
     if (boosterSync.done || boosterUi.presence !== 'PRESENT') return null;
@@ -514,33 +503,35 @@ function analyse(mat, msg, meta) {
       done: boosterSync.done, seconds: boosterSync.value,
       raw: boosterSync.raw, reason: boosterSync.reason
     };
-    return runeDuration.observe(mat, visibility, msg.frameId);
-  }).then(function (rd) {
-    out.rune_duration = rd;
-    if (aborted()) return [];
-    /* 비약(P04)과 룬 쿨타임(U20)을 **한 번에** 찾는다.
+    if (aborted()) return null;
+    /* 룬 지속시간(U13/U19) · 비약(P04) · 룬 쿨타임(U20)을 **한 패스에서** 찾는다.
 
-       예전에는 classify 를 두 번 불렀는데, 그러면 윤곽 검출과 격자 구성을
-       두 번씩 하게 된다. 두 라벨이 서로 다투는 일은 없으므로(서로 rival 이
-       아니고 max_instances 도 1) 한 패스에서 같이 찾아도 결과가 달라지지
-       않는다. 룬 쿨타임 아이콘은 룬이 발동 중이 아닐 때 '쿨타임인가 생성
-       대기인가'를 가르는 데만 쓰고 알림에는 관여하지 않는다. */
-    return buffs.classify(mat, ['P04', 'U20'], { yieldEvery: 0, aborted: aborted });
+       예전에는 룬 지속시간 판독기와 비약/쿨타임이 classify 를 따로 불러,
+       윤곽 검출과 격자 구성을 hud 프레임마다 두 번씩 했다. 라벨끼리 서로
+       다투지 않으므로(rival 도 아니고 별칭도 아니다) 한 패스에서 같이 찾아도
+       라벨별 결과는 같다. 룬 쿨타임 아이콘은 '쿨타임인가 생성 대기인가'를
+       가르는 데만 쓰고 알림에는 관여하지 않는다. */
+    return buffs.classify(mat, runeDuration.ids().concat(['P04', 'U20']),
+                          { yieldEvery: 0, aborted: aborted });
   }).then(function (list) {
+    if (!list) return null;                  // worker stopping - result is dropped anyway
     var byId = function (id) {
-      for (var i = 0; i < (list ? list.length : 0); i++) {
+      for (var i = 0; i < list.length; i++) {
         if (list[i].id === id) return list[i];
       }
       return null;
     };
     out.wealth = byId('P04');
-    out.wealth_rejected = (list && list.rejected) || [];
+    out.wealth_rejected = list.rejected || [];
     var c = byId('U20');
     out.rune_cooldown = c
       ? { present: true, remaining_seconds: c.remaining_seconds,
           raw: c.raw_number, match_score: c.match_score, bbox: c.bbox }
       : { present: false, remaining_seconds: null, raw: null,
           match_score: null, bbox: null };
+    return runeDuration.observe(mat, visibility, msg.frameId, list);
+  }).then(function (rd) {
+    out.rune_duration = rd;
     return out;
   });
 }

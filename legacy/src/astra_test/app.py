@@ -19,7 +19,7 @@ def write_json(path, value):
 
 def run_observer(stop, updates=None, seconds=None, sound=False):
     ocr=OCR(); state=ExperienceState()
-    gates={k:PresenceGate(6 if k=='lie_detector' else 3) for k in ('rune','lie_detector')}
+    gates={'rune':PresenceGate(3)}
     expiry={k:ExpirationGate() for k in ('wealth','booster')}
     processed={}; last_alert=None
     windows=find_windows()
@@ -51,16 +51,15 @@ def run_observer(stop, updates=None, seconds=None, sound=False):
             exp=detect_exp(image,ocr)
             event=state.update(exp['value'],stamp)
             aux=auxiliaries.snapshot(time.monotonic())
-            hud=aux.get('hud',{});lie=aux.get('lie',{})
+            hud=aux.get('hud',{})
             buff_result=aux.get('buffs',{}).get('buffs',[]);minimap=hud.get('minimap_bbox')
             events=['experience_stalled'] if event else []
-            for kind,data in (('hud',hud),('lie',lie)):
+            for kind,data in (('hud',hud),):
                 if not data or data.get('stamp')==processed.get(kind):continue
                 processed[kind]=data['stamp']
-                for key in ('rune','lie_detector'):
-                    if key in data:
-                        obs=data[key]
-                        if gates[key].update(obs['present'] if obs['status']=='observed' else None,data['stamp']):events.append(key+'_appeared')
+                if 'rune' in data:
+                    obs=data['rune']
+                    if gates['rune'].update(obs['present'] if obs['status']=='observed' else None,data['stamp']):events.append('rune_appeared')
                 if kind=='hud':
                     wealth=hud.get('wealth')
                     booster=hud.get('booster',{})
@@ -79,10 +78,8 @@ def run_observer(stop, updates=None, seconds=None, sound=False):
                     'wealth':hud.get('wealth'),
                     'rune':hud.get('rune',{'status':'unknown'}),
                     'booster':hud.get('booster',{'status':'unknown'}),
-                    'lie_detector':lie.get('lie_detector',{'status':'unknown'}),
                     'auxiliary_errors':{k:v['error'] for k,v in aux.items() if 'error' in v},
                     'auxiliary_processing_ms':{k:v.get('processing_ms') for k,v in aux.items()},
-                    'lie_age_seconds':round(time.monotonic()-lie['stamp'],2) if 'stamp' in lie else None,
                     'hud_age_seconds':round(time.monotonic()-hud['stamp'],2) if 'stamp' in hud else None,
                     'last_alert':last_alert,
                     'processing_ms':round((time.monotonic()-t)*1000,2)}
@@ -93,8 +90,8 @@ def run_observer(stop, updates=None, seconds=None, sound=False):
                 if sound:
                     import winsound
                     def beep(kind=event_type):
-                        for _ in range(3 if kind=='lie_detector_appeared' else 2):
-                            winsound.Beep(1500 if kind=='lie_detector_appeared' else 1100,180)
+                        for _ in range(2):
+                            winsound.Beep(1100,180)
                             time.sleep(.12)
                     threading.Thread(target=beep,daemon=True).start()
             if stamp-last_write>=1:
@@ -134,7 +131,7 @@ def gui():
     for col,label,width in zip(columns,['분류 ID','버프 이름','잔여시간','화면 숫자','확인 상태'],[90,220,200,100,160]):
         tree.heading(col,text=label);tree.column(col,width=width)
     tree.pack(fill='both',expand=True,padx=16,pady=10)
-    notice=ttk.Label(root,text='룬 / 비약 / 부스터 / 거짓말 탐지기: 대기')
+    notice=ttk.Label(root,text='룬 / 비약 / 부스터: 대기')
     notice.pack(padx=16,pady=5)
     controls=ttk.Frame(root);controls.pack(fill='x',padx=16,pady=12)
     sound=tk.BooleanVar(value=True)
@@ -164,7 +161,7 @@ def gui():
                 potion=r.get('wealth') or {}
                 pn=potion.get('remaining_seconds')
                 pt='?' if pn is None else f'{pn//60}분' if potion.get('resolution_seconds')==60 else f'{pn//60}:{pn%60:02}'
-                notice.configure(text=f"룬: {r['rune'].get('present','?')} / 비약: {pt} / 부스터: {r['booster'].get('remaining_seconds','?')}초 / 탐지기: {r['lie_detector'].get('present','?')} / 최근 알림: {r.get('last_alert') or '없음'}")
+                notice.configure(text=f"룬: {r['rune'].get('present','?')} / 비약: {pt} / 부스터: {r['booster'].get('remaining_seconds','?')}초 / 최근 알림: {r.get('last_alert') or '없음'}")
                 tree.delete(*tree.get_children())
                 for b in r['buffs']:
                     n=b['remaining_seconds']

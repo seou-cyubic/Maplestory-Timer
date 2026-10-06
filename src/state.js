@@ -11,8 +11,6 @@
             (kept for the potion; the booster no longer uses timers at all)
      FIX-6  a buff icon that keeps its place with the number painted out is in
             its final seconds; the ending is the icon going away
-     FIX-7  a decrease in the experience value no longer re-arms the stall
-            alert - only a confirmed increase does
      FIX-8  a buff icon that vanishes with plenty of time left closes the
             lifetime as unverifiable; the stale deadline can never fire later
      FIX-9  the booster is judged purely on whether its "남은시간" UI is on
@@ -21,102 +19,12 @@
 (function (root) {
   'use strict';
 
-  var parse = root.parse;
   var options = {
-    // FIX-1: the 2026-09-05 live run produced three experience_stalled alerts
-    // inside one continuous idle period because every >0.5 s frame gap
-    // cleared `alerted`.
-    rearmOnlyOnIncrease: true,
     // FIX-2: reject timer readings that contradict elapsed time. The same run
     // reported "1.19s" while the booster really had ~17 s left. Still used by
     // the potion path; the booster path no longer feeds it.
     timerConsistencyFilter: true,
-    stallSeconds: 8,        // 사용자 지시 2026-09-15: 7초 -> 8초
-    /* How long a hole between experience observations may be before tracking
-       restarts from a new baseline.
-
-       The legacy 0.5 s assumed the ~10 Hz experience loop of the Python build.
-       Measured 2026-09-06 on the user's machine the browser pipeline delivers
-       1.5-3 readings per second, so a 0.5 s tolerance re-baselined on almost
-       every frame and the state never left BASELINING - the stall alert could
-       never fire at all. 2.0 s comfortably covers that cadence while staying
-       far below the 7 s stall window.
-
-       Widening this cannot bring back the 2026-09-05 duplicate alerts:
-       FIX-1/FIX-7 mean re-baselining never clears `alerted`; only a confirmed
-       increase does. */
-    maxGapSeconds: 2.0
-  };
-
-  function ExperienceState() {
-    this.value = null;      // digit string
-    this.lastSeen = null;
-    this.since = null;
-    this.pending = null;    // [digitString, time]
-    this.alerted = false;
-    this.status = 'BASELINING';
-  }
-
-  ExperienceState.prototype.update = function (value, now) {
-    if (value === null || value === undefined) {
-      this.lastSeen = null;
-      this.pending = null;
-      this.since = null;
-      this.status = 'UNKNOWN';
-      return false;
-    }
-    if (this.lastSeen === null || now - this.lastSeen > options.maxGapSeconds) {
-      this.pending = [value, now];
-      this.value = null;
-      this.since = now;
-      if (!options.rearmOnlyOnIncrease) this.alerted = false;
-      this.status = 'BASELINING';
-    }
-    this.lastSeen = now;
-
-    if (this.value === null) {
-      if (this.pending && parse.cmpExp(value, this.pending[0]) >= 0 && now > this.pending[1]) {
-        this.value = value;
-        this.since = now;
-        this.pending = null;
-        this.status = 'TRACKING';
-      } else {
-        this.pending = [value, now];
-      }
-      return false;
-    }
-    var c = parse.cmpExp(value, this.value);
-    if (c < 0) {
-      // FIX-7: a decrease is unexplained - a misread, a level change, or a
-      // different character. Take a new baseline and mark it for re-checking,
-      // but do NOT clear `alerted`: only a confirmed increase means the hunt
-      // actually resumed, and the 2026-09-05 run fired a second stall alert
-      // purely because a misread dropped the value.
-      this.value = null;
-      this.pending = [value, now];
-      this.since = now;
-      this.status = 'RECHECK';
-      return false;
-    }
-    if (c > 0) {                       // increase: confirm before trusting it
-      if (this.pending && parse.cmpExp(value, this.pending[0]) >= 0) {
-        this.value = value;
-        this.since = this.pending[1];
-        this.pending = null;
-        this.alerted = false;          // the only legitimate re-arm
-        this.status = 'TRACKING';
-      } else {
-        this.pending = [value, now];
-      }
-      return false;
-    }
-    this.pending = null;
-    if (now - this.since >= options.stallSeconds && !this.alerted) {
-      this.alerted = true;
-      this.status = 'STALLED';
-      return true;
-    }
-    return false;
+    stallSeconds: 8         // 사용자 지시 2026-09-15: 7초 -> 8초
   };
 
   /* 경험치 활동 상태기계 (2026-09-06).
@@ -126,7 +34,7 @@
        변하지 않음 -> 정체 시계 누적, stallSeconds 넘으면 1회 알림
        관측 불가   -> 아무것도 누적하지 않음 (화면 정지·가림·무효 프레임)
 
-     재무장은 '실제 변화'에서만 일어난다. FIX-1/FIX-7과 같은 규칙이라
+     재무장은 '실제 변화'에서만 일어난다 (FIX-1). 그래서
      한 번 울린 정체가 관측 공백 때문에 다시 울리는 일은 없다. */
   function ExperienceActivity(stallSeconds) {
     this.stallSeconds = stallSeconds === undefined ? options.stallSeconds : stallSeconds;
@@ -260,33 +168,6 @@
     return false;
   };
   PresenceGate.prototype.reset = function () { this.count = 0; this.active = false; this.last = null; };
-
-  /* Expiration is only inferred from a recently observed final-seconds
-     countdown. Retained for reference and for the legacy comparison tests; the
-     booster no longer uses it (FIX-9). */
-  function ExpirationGate() {
-    this.last = null; this.remaining = null; this.armed = false; this.alerted = false;
-  }
-  ExpirationGate.prototype.update = function (remaining, resolution, now, visible) {
-    if (visible === undefined) visible = true;
-    if (!visible) { this.last = null; this.armed = false; return false; }
-    if (remaining !== null && remaining !== undefined) {
-      if (remaining > 5) this.alerted = false;
-      if (remaining === 0 && this.armed && !this.alerted) { this.alerted = true; return true; }
-      var consistent = this.last !== null && now - this.last <= 3 && this.remaining !== null &&
-        Math.abs((this.remaining - remaining) - (now - this.last)) <= 2;
-      this.last = now;
-      this.remaining = remaining;
-      this.armed = consistent && resolution === 1 && remaining > 0 && remaining <= 5;
-      return false;
-    }
-    if (this.armed && this.last !== null) {
-      var elapsed = now - this.last;
-      if (elapsed > 8) this.armed = false;
-      else if (elapsed >= this.remaining + 1 && !this.alerted) { this.alerted = true; return true; }
-    }
-    return false;
-  };
 
   /* Buff-icon lifetime.
 
@@ -769,11 +650,9 @@
   root.state = {
     options: options,
     RUNE_THRESHOLD_SECONDS: RUNE_THRESHOLD_SECONDS,
-    ExperienceState: ExperienceState,
     ExperienceActivity: ExperienceActivity,
     TimerState: TimerState,
     PresenceGate: PresenceGate,
-    ExpirationGate: ExpirationGate,
     BuffExpiry: BuffExpiry,
     BoosterUiState: BoosterUiState,
     gateObservation: gateObservation

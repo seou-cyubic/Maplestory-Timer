@@ -1,6 +1,6 @@
 import pytest
 from astra_test.vision import ROOT,read_image,OCR,BuffClassifier,detect_minimap,detect_exp
-from astra_test.detectors import RuneDetector,BoosterDetector,LieDetector
+from astra_test.detectors import RuneDetector,BoosterDetector
 from astra_test.state import PresenceGate,ExpirationGate
 
 @pytest.fixture(scope='module')
@@ -44,31 +44,6 @@ def test_presence_confirmation():
  assert not g.update(False,2)
  assert not g.update(True,3)
  assert g.update(True,3.5)
-
-@pytest.fixture(scope='module')
-def lie():return LieDetector()
-
-@pytest.mark.parametrize('name',['user_type_1.webp','user_type_2.webp','user_type_3.webp','user_type_4.webp','video_frame_1.png','video_frame_2.png','video_frame_3.png'])
-def test_lie_supplied_variants(lie,name):
- import cv2,numpy as np
- im=read_image(ROOT/'assets/lie_detector'/name)
- # Deterministic scale + mild blur + noise regression; not independent field accuracy.
- im=cv2.resize(im,None,fx=1.15,fy=1.15)
- im=cv2.GaussianBlur(im,(3,3),.5)
- im=np.clip(im.astype(float)+np.random.default_rng(3).normal(0,4,im.shape),0,255).astype('uint8')
- assert lie.observe(im)['present']
-
-def test_lie_gameplay_negative(lie):
- for p in ROOT.glob('*.png'):
-  im=read_image(p)
-  if im.shape[1]>1000:assert not lie.observe(im)['present'],p.name
-
-
-def test_violet_static_controls(lie):
- import cv2
- im=read_image(ROOT/'assets/lie_detector/violet_controls.png')
- assert lie.observe(cv2.resize(im,None,fx=.8,fy=.8))['present']
-
 
 def test_user_confirmed_additional_units(engines):
  _,c,_,_=engines

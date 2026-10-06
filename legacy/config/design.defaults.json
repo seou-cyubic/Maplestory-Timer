@@ -23,7 +23,6 @@
     "wealth_icon": 2,
     "wealth_time": 4,
     "experience": 10,
-    "lie_detector": 10,
     "booster_time": 4
   },
   "experience": {
@@ -55,13 +54,6 @@
     "present_min_ms": 400,
     "present_min_samples": 3,
     "clear_ms": 2000
-  },
-  "lie_detector": {
-    "roi": null,
-    "present_min_ms": 300,
-    "present_min_samples": 3,
-    "clear_ms": 1000,
-    "repeat_ms": 5000
   },
   "remaining_time": {
     "display_hz": 10,
